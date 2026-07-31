@@ -8,7 +8,6 @@
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css?v=20260731">
     <script src="/assets/app.js?v=20260731" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
     <meta http-equiv="content-language" content="zh-CN">
 </head>
 <body>
@@ -81,92 +80,148 @@
     <h2>架构总览</h2>
     <p>Janus 分为四层。外部客户端通过协议网关接入；无状态的核心服务负责任务生命周期、治理与后台 Worker；所有持久状态都外部化。每一层都可以独立扩展。</p>
 
-    <pre class="mermaid">
-flowchart TB
-    classDef ext fill:#0b2433,stroke:#22d3ee,color:#e9eefb,stroke-width:1.5px
-    classDef edge fill:#33240b,stroke:#fbbf24,color:#e9eefb,stroke-width:1.5px
-    classDef ing fill:#0b1733,stroke:#60a5fa,color:#e9eefb,stroke-width:1.5px
-    classDef data fill:#16114a,stroke:#818cf8,color:#e9eefb,stroke-width:1.5px
-    classDef ctrl fill:#2b114a,stroke:#a855f7,color:#e9eefb,stroke-width:1.5px
-    classDef wrk fill:#0d3a26,stroke:#34d399,color:#e9eefb,stroke-width:1.5px
-    classDef infra fill:#4a1118,stroke:#fb7185,color:#e9eefb,stroke-width:1.5px
+    <div class="arch" role="img" aria-label="Janus 分层架构：外部客户端、边缘与安全、接入层、核心服务（数据面、控制面、后台 Worker）与基础设施">
 
-    subgraph EXT["外部客户端"]
-        direction LR
-        A1["A2A Agents"]:::ext
-        A2["ACP Agents"]:::ext
-        A3["SDK Agents"]:::ext
-        A4["MCP Servers"]:::ext
-        A5["Dashboard UI"]:::ext
-    end
+      <section class="arch-plane p-ext">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🛰️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">外部客户端</span>
+              <span class="arch-plane-tag">01</span>
+            </div>
+            <p class="arch-plane-sub">与 Janus 通信的 Agent 与工具</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🤖</span><span class="arch-node-name">A2A Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧠</span><span class="arch-node-name">ACP Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">📦</span><span class="arch-node-name">SDK Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔌</span><span class="arch-node-name">MCP Servers</span></div>
+          <div class="arch-node"><span class="arch-node-ico">📊</span><span class="arch-node-name">Dashboard UI</span></div>
+        </div>
+      </section>
 
-    subgraph EDGE["边缘与安全"]
-        direction LR
-        B1["DNS / GSLB"]:::edge
-        B2["WAF / API 网关"]:::edge
-        B3["mTLS / OIDC"]:::edge
-        B4["限流 / 租户闸门"]:::edge
-    end
+      <div class="arch-flow f-ext-edge"><span class="arch-flow-orb"></span></div>
 
-    subgraph ING["接入层 — 协议适配"]
-        direction LR
-        C1["A2A 网关"]:::ing
-        C2["SDK 网关"]:::ing
-        C3["HTTP / gRPC API"]:::ing
-        C4["WebSocket 网关"]:::ing
-    end
+      <section class="arch-plane p-edge">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🛡️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">边缘与安全</span>
+              <span class="arch-plane-tag">02</span>
+            </div>
+            <p class="arch-plane-sub">认证 · 防护 · 限流</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🌐</span><span class="arch-node-name">DNS / GSLB</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧱</span><span class="arch-node-name">WAF / API 网关</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔐</span><span class="arch-node-name">mTLS / OIDC</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🚦</span><span class="arch-node-name">限流 / 租户闸门</span></div>
+        </div>
+      </section>
 
-    subgraph CORE["核心服务 — 无状态 · 水平扩展"]
-        direction LR
-        subgraph DATA["数据面 — 任务流转"]
-            direction LR
-            D1["TaskSvc"]:::data
-            D2["Mailbox"]:::data
-            D3["DispSvc"]:::data
-            D4["Lease"]:::data
-        end
-        subgraph CTRL["控制面 — 治理"]
-            direction LR
-            E1["Registry"]:::ctrl
-            E2["Policy"]:::ctrl
-            E3["Budget"]:::ctrl
-            E4["Approval"]:::ctrl
-            E5["Audit"]:::ctrl
-        end
-        subgraph WRK["后台 Worker — 租约安全"]
-            direction LR
-            F1["OutboxPub"]:::wrk
-            F2["EventProj"]:::wrk
-            F3["LeaseScan"]:::wrk
-            F4["HbSweep"]:::wrk
-        end
-    end
+      <div class="arch-flow f-edge-ingress"><span class="arch-flow-orb"></span></div>
 
-    subgraph INFRA["基础设施 — 外部化 · 高可用"]
-        direction LR
-        G1[("PostgreSQL HA")]:::infra
-        G2[("NATS JetStream")]:::infra
-        G3[("Redis / Valkey")]:::infra
-        G4[("Artifact Store")]:::infra
-    end
+      <section class="arch-plane p-ingress">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🚪</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">接入层</span>
+              <span class="arch-plane-tag">03</span>
+            </div>
+            <p class="arch-plane-sub">协议适配与认证</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🔀</span><span class="arch-node-name">A2A 网关</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧰</span><span class="arch-node-name">SDK 网关</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔗</span><span class="arch-node-name">HTTP / gRPC API</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔌</span><span class="arch-node-name">WebSocket 网关</span></div>
+        </div>
+      </section>
 
-    EXT ==> EDGE ==> ING ==> CORE
-    D1 -->|"状态 · Outbox"| G1
-    E5 -->|"审计投影"| G1
-    F1 -->|"发布任务 / 事件"| G2
-    D2 -->|"投递 · 消费"| G2
-    C3 -.->|"心跳 · 速率计数"| G3
-    D3 -->|"result_ref"| G4
+      <div class="arch-flow f-ingress-core"><span class="arch-flow-orb"></span></div>
 
-    style EXT fill:#071826,stroke:#22d3ee,color:#e9eefb
-    style EDGE fill:#1f1807,stroke:#fbbf24,color:#e9eefb
-    style ING fill:#070f26,stroke:#60a5fa,color:#e9eefb
-    style CORE fill:#0a0818,stroke:#818cf8,color:#e9eefb
-    style DATA fill:#0d0a24,stroke:#818cf8,color:#99a4bd
-    style CTRL fill:#150a24,stroke:#a855f7,color:#99a4bd
-    style WRK fill:#071c14,stroke:#34d399,color:#99a4bd
-    style INFRA fill:#180a10,stroke:#fb7185,color:#e9eefb
-    </pre>
+      <section class="arch-plane p-core">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">⚙️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">核心服务</span>
+              <span class="arch-plane-tag">04</span>
+            </div>
+            <p class="arch-plane-sub">无状态 · 水平扩展</p>
+          </div>
+        </header>
+        <div class="arch-core">
+          <div class="arch-zone z-data">
+            <div class="arch-zone-head">数据面<span class="arch-zone-sub">任务流转</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">⚙️</span><span class="arch-node-name">TaskSvc</span></div>
+              <div class="arch-node"><span class="arch-node-ico">📬</span><span class="arch-node-name">Mailbox</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🚚</span><span class="arch-node-name">DispSvc</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🔑</span><span class="arch-node-name">Lease</span></div>
+            </div>
+          </div>
+          <div class="arch-zone z-ctrl">
+            <div class="arch-zone-head">控制面<span class="arch-zone-sub">治理</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">🗂️</span><span class="arch-node-name">Registry</span></div>
+              <div class="arch-node"><span class="arch-node-ico">📜</span><span class="arch-node-name">Policy</span></div>
+              <div class="arch-node"><span class="arch-node-ico">💰</span><span class="arch-node-name">Budget</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🖊️</span><span class="arch-node-name">Approval</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🕵️</span><span class="arch-node-name">Audit</span></div>
+            </div>
+          </div>
+          <div class="arch-zone z-wrk">
+            <div class="arch-zone-head">后台 Worker<span class="arch-zone-sub">租约安全</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">📤</span><span class="arch-node-name">OutboxPub</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🔄</span><span class="arch-node-name">EventProj</span></div>
+              <div class="arch-node"><span class="arch-node-ico">⏳</span><span class="arch-node-name">LeaseScan</span></div>
+              <div class="arch-node"><span class="arch-node-ico">💓</span><span class="arch-node-name">HbSweep</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="arch-flow f-core-infra"><span class="arch-flow-orb"></span></div>
+
+      <section class="arch-plane p-infra">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🗄️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">基础设施</span>
+              <span class="arch-plane-tag">05</span>
+            </div>
+            <p class="arch-plane-sub">外部化 · 高可用</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node">
+            <span class="arch-node-ico">🗄️</span>
+            <span class="arch-node-txt"><span class="arch-node-name">PostgreSQL</span><span class="arch-node-sub">状态 · Outbox · 审计</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">⚡</span>
+            <span class="arch-node-txt"><span class="arch-node-name">NATS JetStream</span><span class="arch-node-sub">投递 · 事件</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">🔥</span>
+            <span class="arch-node-txt"><span class="arch-node-name">Redis / Valkey</span><span class="arch-node-sub">心跳 · 计数</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">📦</span>
+            <span class="arch-node-txt"><span class="arch-node-name">Artifact Store</span><span class="arch-node-sub">结果 · 导出</span></span>
+          </div>
+        </div>
+      </section>
+    </div>
     <p class="note">接入层只做协议适配。核心服务拥有状态机与治理。PostgreSQL 是事实来源；NATS 承载投递与事件；Redis 只保存心跳与速率计数。</p>
 
     <p><strong>接入层</strong>只做协议适配和认证 —— 不持有任何业务逻辑。<strong>核心服务</strong>拥有任务状态机、策略执行、预算核算和审计；它们无状态、可水平扩展。<strong>后台 Worker</strong>（Outbox 发布器、事件投影、租约扫描、心跳清扫）独立运行，通过数据库租约和幂等键协调，多个副本并行也不会重复投递。</p>
@@ -281,35 +336,5 @@ flowchart TB
         </div>
     </div>
 </footer>
-
-    <script>
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'base',
-        themeVariables: {
-          background: '#070b16',
-          fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif",
-          fontSize: '13px',
-          lineColor: '#69748f',
-          textColor: '#e9eefb',
-          primaryColor: '#0d1426',
-          primaryTextColor: '#e9eefb',
-          primaryBorderColor: '#6366f1',
-          secondaryColor: '#0a0f1e',
-          tertiaryColor: '#0a0f1e',
-          edgeLabelBackground: '#0a0f1e',
-          clusterBkg: '#0a0f1e',
-          clusterBorder: '#3f4a63'
-        },
-        flowchart: {
-          curve: 'basis',
-          padding: 10,
-          nodeSpacing: 28,
-          rankSpacing: 40,
-          useMaxWidth: true
-        }
-      });
-      mermaid.run();
-    </script>
 </body>
 </html>

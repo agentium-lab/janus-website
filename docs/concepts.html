@@ -8,7 +8,6 @@
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css?v=20260731">
     <script src="/assets/app.js?v=20260731" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 </head>
 <body>
 <div class="bg" aria-hidden="true">
@@ -80,92 +79,148 @@
     <h2>Architecture Overview</h2>
     <p>Janus is layered into four planes. External clients enter through protocol gateways; stateless core services own the task lifecycle, governance, and background workers; all durable state is externalized. Every layer scales independently.</p>
 
-    <pre class="mermaid">
-flowchart TB
-    classDef ext fill:#0b2433,stroke:#22d3ee,color:#e9eefb,stroke-width:1.5px
-    classDef edge fill:#33240b,stroke:#fbbf24,color:#e9eefb,stroke-width:1.5px
-    classDef ing fill:#0b1733,stroke:#60a5fa,color:#e9eefb,stroke-width:1.5px
-    classDef data fill:#16114a,stroke:#818cf8,color:#e9eefb,stroke-width:1.5px
-    classDef ctrl fill:#2b114a,stroke:#a855f7,color:#e9eefb,stroke-width:1.5px
-    classDef wrk fill:#0d3a26,stroke:#34d399,color:#e9eefb,stroke-width:1.5px
-    classDef infra fill:#4a1118,stroke:#fb7185,color:#e9eefb,stroke-width:1.5px
+    <div class="arch" role="img" aria-label="Janus layered architecture: external clients, edge security, ingress plane, core services with data plane, control plane and background workers, and infrastructure">
 
-    subgraph EXT["External Clients"]
-        direction LR
-        A1["A2A Agents"]:::ext
-        A2["ACP Agents"]:::ext
-        A3["SDK Agents"]:::ext
-        A4["MCP Servers"]:::ext
-        A5["Dashboard UI"]:::ext
-    end
+      <section class="arch-plane p-ext">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🛰️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">External Clients</span>
+              <span class="arch-plane-tag">01</span>
+            </div>
+            <p class="arch-plane-sub">agents &amp; tooling that talk to Janus</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🤖</span><span class="arch-node-name">A2A Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧠</span><span class="arch-node-name">ACP Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">📦</span><span class="arch-node-name">SDK Agents</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔌</span><span class="arch-node-name">MCP Servers</span></div>
+          <div class="arch-node"><span class="arch-node-ico">📊</span><span class="arch-node-name">Dashboard UI</span></div>
+        </div>
+      </section>
 
-    subgraph EDGE["Edge / Security"]
-        direction LR
-        B1["DNS / GSLB"]:::edge
-        B2["WAF / API Gateway"]:::edge
-        B3["mTLS / OIDC"]:::edge
-        B4["Rate Limit / Tenant Gate"]:::edge
-    end
+      <div class="arch-flow f-ext-edge"><span class="arch-flow-orb"></span></div>
 
-    subgraph ING["Ingress Plane — protocol adaptation"]
-        direction LR
-        C1["A2A Gateway"]:::ing
-        C2["SDK Gateway"]:::ing
-        C3["HTTP / gRPC API"]:::ing
-        C4["WebSocket Gateway"]:::ing
-    end
+      <section class="arch-plane p-edge">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🛡️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">Edge / Security</span>
+              <span class="arch-plane-tag">02</span>
+            </div>
+            <p class="arch-plane-sub">authentication · protection · rate limiting</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🌐</span><span class="arch-node-name">DNS / GSLB</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧱</span><span class="arch-node-name">WAF / API Gateway</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔐</span><span class="arch-node-name">mTLS / OIDC</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🚦</span><span class="arch-node-name">Rate Limit / Tenant Gate</span></div>
+        </div>
+      </section>
 
-    subgraph CORE["Core Services — stateless · horizontally replicated"]
-        direction LR
-        subgraph DATA["Data Plane — task flow"]
-            direction LR
-            D1["TaskSvc"]:::data
-            D2["Mailbox"]:::data
-            D3["DispSvc"]:::data
-            D4["Lease"]:::data
-        end
-        subgraph CTRL["Control Plane — governance"]
-            direction LR
-            E1["Registry"]:::ctrl
-            E2["Policy"]:::ctrl
-            E3["Budget"]:::ctrl
-            E4["Approval"]:::ctrl
-            E5["Audit"]:::ctrl
-        end
-        subgraph WRK["Background Workers — lease-safe"]
-            direction LR
-            F1["OutboxPub"]:::wrk
-            F2["EventProj"]:::wrk
-            F3["LeaseScan"]:::wrk
-            F4["HbSweep"]:::wrk
-        end
-    end
+      <div class="arch-flow f-edge-ingress"><span class="arch-flow-orb"></span></div>
 
-    subgraph INFRA["Infrastructure — externalized · highly available"]
-        direction LR
-        G1[("PostgreSQL HA")]:::infra
-        G2[("NATS JetStream")]:::infra
-        G3[("Redis / Valkey")]:::infra
-        G4[("Artifact Store")]:::infra
-    end
+      <section class="arch-plane p-ingress">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🚪</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">Ingress Plane</span>
+              <span class="arch-plane-tag">03</span>
+            </div>
+            <p class="arch-plane-sub">protocol adaptation &amp; authentication</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node"><span class="arch-node-ico">🔀</span><span class="arch-node-name">A2A Gateway</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🧰</span><span class="arch-node-name">SDK Gateway</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔗</span><span class="arch-node-name">HTTP / gRPC API</span></div>
+          <div class="arch-node"><span class="arch-node-ico">🔌</span><span class="arch-node-name">WebSocket Gateway</span></div>
+        </div>
+      </section>
 
-    EXT ==> EDGE ==> ING ==> CORE
-    D1 -->|"state · outbox"| G1
-    E5 -->|"audit projection"| G1
-    F1 -->|"publish tasks / events"| G2
-    D2 -->|"deliver · consume"| G2
-    C3 -.->|"heartbeat · rate counters"| G3
-    D3 -->|"result_ref"| G4
+      <div class="arch-flow f-ingress-core"><span class="arch-flow-orb"></span></div>
 
-    style EXT fill:#071826,stroke:#22d3ee,color:#e9eefb
-    style EDGE fill:#1f1807,stroke:#fbbf24,color:#e9eefb
-    style ING fill:#070f26,stroke:#60a5fa,color:#e9eefb
-    style CORE fill:#0a0818,stroke:#818cf8,color:#e9eefb
-    style DATA fill:#0d0a24,stroke:#818cf8,color:#99a4bd
-    style CTRL fill:#150a24,stroke:#a855f7,color:#99a4bd
-    style WRK fill:#071c14,stroke:#34d399,color:#99a4bd
-    style INFRA fill:#180a10,stroke:#fb7185,color:#e9eefb
-    </pre>
+      <section class="arch-plane p-core">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">⚙️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">Core Services</span>
+              <span class="arch-plane-tag">04</span>
+            </div>
+            <p class="arch-plane-sub">stateless · horizontally replicated</p>
+          </div>
+        </header>
+        <div class="arch-core">
+          <div class="arch-zone z-data">
+            <div class="arch-zone-head">Data Plane<span class="arch-zone-sub">task flow</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">⚙️</span><span class="arch-node-name">TaskSvc</span></div>
+              <div class="arch-node"><span class="arch-node-ico">📬</span><span class="arch-node-name">Mailbox</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🚚</span><span class="arch-node-name">DispSvc</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🔑</span><span class="arch-node-name">Lease</span></div>
+            </div>
+          </div>
+          <div class="arch-zone z-ctrl">
+            <div class="arch-zone-head">Control Plane<span class="arch-zone-sub">governance</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">🗂️</span><span class="arch-node-name">Registry</span></div>
+              <div class="arch-node"><span class="arch-node-ico">📜</span><span class="arch-node-name">Policy</span></div>
+              <div class="arch-node"><span class="arch-node-ico">💰</span><span class="arch-node-name">Budget</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🖊️</span><span class="arch-node-name">Approval</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🕵️</span><span class="arch-node-name">Audit</span></div>
+            </div>
+          </div>
+          <div class="arch-zone z-wrk">
+            <div class="arch-zone-head">Background Workers<span class="arch-zone-sub">lease-safe</span></div>
+            <div class="arch-nodes">
+              <div class="arch-node"><span class="arch-node-ico">📤</span><span class="arch-node-name">OutboxPub</span></div>
+              <div class="arch-node"><span class="arch-node-ico">🔄</span><span class="arch-node-name">EventProj</span></div>
+              <div class="arch-node"><span class="arch-node-ico">⏳</span><span class="arch-node-name">LeaseScan</span></div>
+              <div class="arch-node"><span class="arch-node-ico">💓</span><span class="arch-node-name">HbSweep</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="arch-flow f-core-infra"><span class="arch-flow-orb"></span></div>
+
+      <section class="arch-plane p-infra">
+        <header class="arch-plane-head">
+          <span class="arch-plane-ico">🗄️</span>
+          <div>
+            <div class="arch-plane-titlerow">
+              <span class="arch-plane-title">Infrastructure</span>
+              <span class="arch-plane-tag">05</span>
+            </div>
+            <p class="arch-plane-sub">externalized state · highly available</p>
+          </div>
+        </header>
+        <div class="arch-nodes">
+          <div class="arch-node">
+            <span class="arch-node-ico">🗄️</span>
+            <span class="arch-node-txt"><span class="arch-node-name">PostgreSQL</span><span class="arch-node-sub">state · outbox · audit</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">⚡</span>
+            <span class="arch-node-txt"><span class="arch-node-name">NATS JetStream</span><span class="arch-node-sub">deliveries · events</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">🔥</span>
+            <span class="arch-node-txt"><span class="arch-node-name">Redis / Valkey</span><span class="arch-node-sub">heartbeat · counters</span></span>
+          </div>
+          <div class="arch-node">
+            <span class="arch-node-ico">📦</span>
+            <span class="arch-node-txt"><span class="arch-node-name">Artifact Store</span><span class="arch-node-sub">results · exports</span></span>
+          </div>
+        </div>
+      </section>
+    </div>
     <p class="note">The ingress plane only adapts protocols. Core services own state machines and governance. PostgreSQL is the source of truth; NATS carries deliveries and events; Redis holds only heartbeats and rate counters.</p>
 
     <p>The <strong>ingress plane</strong> does only protocol adaptation and authentication — it holds no business logic. The <strong>core services</strong> own the task state machine, policy enforcement, budget accounting, and audit; they are stateless and scale horizontally. <strong>Background workers</strong> (outbox publisher, event projector, lease scanner, heartbeat sweep) run independently and coordinate through database leases and idempotency keys, so multiple replicas never double-deliver.</p>
@@ -280,35 +335,5 @@ flowchart TB
         </div>
     </div>
 </footer>
-
-    <script>
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'base',
-        themeVariables: {
-          background: '#070b16',
-          fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif",
-          fontSize: '13px',
-          lineColor: '#69748f',
-          textColor: '#e9eefb',
-          primaryColor: '#0d1426',
-          primaryTextColor: '#e9eefb',
-          primaryBorderColor: '#6366f1',
-          secondaryColor: '#0a0f1e',
-          tertiaryColor: '#0a0f1e',
-          edgeLabelBackground: '#0a0f1e',
-          clusterBkg: '#0a0f1e',
-          clusterBorder: '#3f4a63'
-        },
-        flowchart: {
-          curve: 'basis',
-          padding: 10,
-          nodeSpacing: 28,
-          rankSpacing: 40,
-          useMaxWidth: true
-        }
-      });
-      mermaid.run();
-    </script>
 </body>
 </html>
