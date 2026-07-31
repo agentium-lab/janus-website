@@ -22,6 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache-bust static assets
+        run: |
+          HASH=$(git rev-parse --short HEAD)
+          find . -name '*.html' -exec sed -i "s|style\.css?v=[0-9a-z]*|style.css?v=${HASH}|g; s|app\.js?v=[0-9a-z]*|app.js?v=${HASH}|g" {} +
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
