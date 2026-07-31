@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janus — 面向企业 Agent 网络的可靠任务代理</title>
+    <meta name="description" content="让不同框架的 Agent 之间可靠地交接任务。不丢任务，不超预算，不越权，全链可追踪。">
+    <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+    <link rel="stylesheet" href="../assets/style.css">
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="../assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <h1>让 Agent 协作<br>进入生产环境</h1>
+        <p class="hero-subtitle">不同框架的 Agent 之间，可靠地交接任务。<br>不丢任务，不超预算，不越权，全链可追踪。</p>
+        <div class="hero-actions">
+            <a href="/zh/docs/quickstart.html" class="btn btn-primary">5 分钟快速开始 →</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+        </div>
+    </div>
+</section>
+
+<section class="problems">
+    <div class="container">
+        <h2>生产环境中的 Agent 协作痛点</h2>
+        <div class="problem-grid">
+            <div class="problem-card">
+                <div class="problem-icon">📭</div>
+                <h3>任务丢失</h3>
+                <p>Agent 离线时，发过去的任务直接消失</p>
+                <div class="solution">→ Janus 持久化收件箱，离线不丢</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔍</div>
+                <h3>无法追踪</h3>
+                <p>谁调用了谁，传了什么数据，全靠猜</p>
+                <div class="solution">→ 全链审计 + Trace ID</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">💥</div>
+                <h3>并发失控</h3>
+                <p>下游 Agent 被并发请求直接打爆</p>
+                <div class="solution">→ 预算 + 并发限制</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔐</div>
+                <h3>缺乏管控</h3>
+                <p>谁能调用谁，能传什么上下文，没有规则</p>
+                <div class="solution">→ 策略引擎 + 审批流</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">💰</div>
+                <h3>成本不可见</h3>
+                <p>Agent 调用花了多少钱，哪个团队超了预算</p>
+                <div class="solution">→ Token / 费用预算控制</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔌</div>
+                <h3>协议碎片化</h3>
+                <p>每个 Agent 框架一套接口，集成成本高</p>
+                <div class="solution">→ A2A / MCP / SDK 统一接入</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2>核心能力</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>🔄 持久投递</h3>
+                <ul>
+                    <li>任务在 PostgreSQL + NATS 双写持久化</li>
+                    <li>Agent 崩溃后自动恢复，任务不丢失</li>
+                    <li>ACK/NACK 幂等，重复提交不重复执行</li>
+                    <li>自动重试 + 死信队列 + 手动重放</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>⚖️ 治理控制</h3>
+                <ul>
+                    <li>策略引擎：谁能调用谁，能传什么数据</li>
+                    <li>预算控制：RPM / TPM / 并发 / 日费用</li>
+                    <li>人工审批：高风险任务需人工确认</li>
+                    <li>全链审计：每一步都有据可查</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🧭 能力路由</h3>
+                <ul>
+                    <li>按能力匹配 Agent，不是写死目标</li>
+                    <li>硬约束：在线 / 权限 / 容量 / 预算</li>
+                    <li>语义排序：候选 Agent 智能打分</li>
+                    <li>意图解析：自然语言 → 能力匹配</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🔌 多协议接入</h3>
+                <ul>
+                    <li>HTTP REST API + gRPC</li>
+                    <li>A2A Gateway（Agent Card / Task Send）</li>
+                    <li>ACP Gateway（Manifest / Runs）</li>
+                    <li>MCP Gateway（Tool Call / Resource）</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>📊 可观测性</h3>
+                <ul>
+                    <li>Prometheus 指标（16+ 核心指标）</li>
+                    <li>OpenTelemetry 链路追踪</li>
+                    <li>结构化 JSON 日志</li>
+                    <li>Grafana 预置面板</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🛡️ 安全隔离</h3>
+                <ul>
+                    <li>租户隔离（数据 / 消息 / 文件）</li>
+                    <li>API Key 认证 + mTLS</li>
+                    <li>跨租户访问自动拒绝</li>
+                    <li>操作审计事件</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="quickstart-preview">
+    <div class="container">
+        <h2>5 分钟跑通</h2>
+        <div class="code-blocks">
+            <div class="code-block">
+                <div class="code-label">1. 启动 Janus</div>
+<pre><code>docker compose up -d</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-label">2. Python SDK 发任务</div>
+<pre><code>from janus_sdk import JanusClient
+
+client = JanusClient("http://localhost:8080", tenant_id="acme")
+client.publish_task({
+    "id": "task-001",
+    "source_agent": "product",
+    "target_type": "mailbox",
+    "target_value": "review-mb",
+    "envelope": { ... }
+})</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-label">3. Agent 拉取并完成</div>
+<pre><code>result = client.pull_task("review-mb", "reviewer")
+client.start_task(result.task.id, result.lease.lease_id)
+
+# 处理任务...
+
+client.ack_task(result.task.id, {
+    "lease_id": result.lease.lease_id,
+    "result_ref": "s3://result.json"
+})</code></pre>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="/zh/docs/quickstart.html" class="btn btn-primary">完整教程 →</a>
+        </div>
+    </div>
+</section>
+
+<section class="scenarios">
+    <div class="container">
+        <h2>使用场景</h2>
+        <div class="scenario-flow">
+            <div class="scenario">
+                <h3>📝 代码审查</h3>
+                <p>产品 → 审查 → 编码 → 测试 → 发布</p>
+                <p class="scenario-detail">PR 提交后自动触发审查 Agent，审查通过后编码 Agent 修改代码，测试 Agent 验证，最后发布</p>
+            </div>
+            <div class="scenario">
+                <h3>🔧 CI 自动修复</h3>
+                <p>失败检测 → 诊断 → 修复 → 验证 → 合并</p>
+                <p class="scenario-detail">CI 失败后自动派发给诊断 Agent，生成修复方案，验证后自动合并</p>
+            </div>
+            <div class="scenario">
+                <h3>🔒 安全扫描</h3>
+                <p>提交 → 依赖扫描 → 凭据检查 → 审批</p>
+                <p class="scenario-detail">代码提交后自动扫描依赖漏洞和凭据泄露，高危变更需人工审批</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="ecosystem">
+    <div class="container">
+        <h2>多框架兼容</h2>
+        <p class="ecosystem-subtitle">LangGraph · AutoGen · CrewAI · GitHub Actions · Claude Code · 自定义 Agent · 人工审批节点</p>
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="/zh/scenarios/code-review.html" class="btn btn-secondary">查看集成示例 →</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="../assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审查</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent 协作</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作进入生产后依然可靠、可控、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

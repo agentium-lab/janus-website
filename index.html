@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janus — Durable Agent Broker for Enterprise Agent Networks</title>
+    <meta name="description" content="Reliably hand off tasks between AI agents. No lost tasks, no budget overruns, no policy bypass, full traceability.">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <h1>Production-Grade<br>Agent Task Broker</h1>
+        <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no budget overruns, no policy bypass, full traceability.</p>
+        <div class="hero-actions">
+            <a href="/docs/quickstart.html" class="btn btn-primary">Get Started in 5 Minutes →</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+        </div>
+    </div>
+</section>
+
+<section class="problems">
+    <div class="container">
+        <h2>Agent Collaboration Breaks in Production</h2>
+        <div class="problem-grid">
+            <div class="problem-card">
+                <div class="problem-icon">📭</div>
+                <h3>Lost Tasks</h3>
+                <p>Tasks vanish when agents go offline</p>
+                <div class="solution">→ Durable mailboxes survive crashes</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔍</div>
+                <h3>No Traceability</h3>
+                <p>Who called whom and with what data?</p>
+                <div class="solution">→ Full audit trail + Trace ID</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">💥</div>
+                <h3>Concurrency Overload</h3>
+                <p>Downstream agents get overwhelmed</p>
+                <div class="solution">→ Budget + concurrency limits</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔐</div>
+                <h3>No Access Control</h3>
+                <p>No rules on who can call whom</p>
+                <div class="solution">→ Policy engine + approval flow</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">💰</div>
+                <h3>Invisible Costs</h3>
+                <p>Which team exceeded token budget?</p>
+                <div class="solution">→ Token / cost budget control</div>
+            </div>
+            <div class="problem-card">
+                <div class="problem-icon">🔌</div>
+                <h3>Protocol Chaos</h3>
+                <p>Every framework has a different interface</p>
+                <div class="solution">→ A2A / MCP / SDK unified access</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2>Core Capabilities</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>🔄 Durable Delivery</h3>
+                <ul>
+                    <li>Dual-write persistence: PostgreSQL + NATS</li>
+                    <li>Automatic recovery after agent crashes</li>
+                    <li>Idempotent ACK/NACK, no double execution</li>
+                    <li>Auto-retry + dead letter queue + replay</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>⚖️ Governance</h3>
+                <ul>
+                    <li>Policy engine: who can call whom, with what data</li>
+                    <li>Budget: RPM / TPM / concurrency / daily cost</li>
+                    <li>Human approval for high-risk tasks</li>
+                    <li>Full audit trail for every step</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🧭 Capability Routing</h3>
+                <ul>
+                    <li>Match agents by capability, not hard-coded target</li>
+                    <li>Hard constraints: online / policy / capacity / budget</li>
+                    <li>Semantic scoring of candidates</li>
+                    <li>Intent resolver: natural language → capability</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🔌 Multi-Protocol</h3>
+                <ul>
+                    <li>HTTP REST API + gRPC</li>
+                    <li>A2A Gateway (Agent Card / Task Send)</li>
+                    <li>ACP Gateway (Manifest / Runs)</li>
+                    <li>MCP Gateway (Tool Call / Resource)</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>📊 Observability</h3>
+                <ul>
+                    <li>Prometheus metrics (16+ core metrics)</li>
+                    <li>OpenTelemetry distributed tracing</li>
+                    <li>Structured JSON logging</li>
+                    <li>Pre-built Grafana dashboard</li>
+                </ul>
+            </div>
+            <div class="feature">
+                <h3>🛡️ Security</h3>
+                <ul>
+                    <li>Tenant isolation (data / messages / files)</li>
+                    <li>API Key auth + mTLS</li>
+                    <li>Automatic cross-tenant access denial</li>
+                    <li>Security audit events</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="quickstart-preview">
+    <div class="container">
+        <h2>Running in 5 Minutes</h2>
+        <div class="code-blocks">
+            <div class="code-block">
+                <div class="code-label">1. Start Janus</div>
+<pre><code>docker compose up -d</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-label">2. Publish a task (Python SDK)</div>
+<pre><code>from janus_sdk import JanusClient
+
+client = JanusClient("http://localhost:8080", tenant_id="acme")
+client.publish_task({
+    "id": "task-001",
+    "source_agent": "product",
+    "target_type": "mailbox",
+    "target_value": "review-mb",
+    "envelope": { ... }
+})</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-label">3. Agent pulls and completes</div>
+<pre><code>result = client.pull_task("review-mb", "reviewer")
+client.start_task(result.task.id, result.lease.lease_id)
+
+# Process task...
+
+client.ack_task(result.task.id, {
+    "lease_id": result.lease.lease_id,
+    "result_ref": "s3://result.json"
+})</code></pre>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="/docs/quickstart.html" class="btn btn-primary">Full Tutorial →</a>
+        </div>
+    </div>
+</section>
+
+<section class="scenarios">
+    <div class="container">
+        <h2>Use Cases</h2>
+        <div class="scenario-flow">
+            <div class="scenario">
+                <h3>📝 Code Review</h3>
+                <p>Product → Review → Code → Test → Deploy</p>
+                <p class="scenario-detail">PR triggers review agent, code agent fixes issues, test agent validates, deploy agent ships</p>
+            </div>
+            <div class="scenario">
+                <h3>🔧 CI Auto-Fix</h3>
+                <p>Failure → Diagnose → Fix → Verify → Merge</p>
+                <p class="scenario-detail">CI failure auto-dispatches to diagnosis agent, generates fix, validates and merges</p>
+            </div>
+            <div class="scenario">
+                <h3>🔒 Security Scan</h3>
+                <p>Commit → Dependency Scan → Credential Check → Approve</p>
+                <p class="scenario-detail">Auto-scan for vulnerabilities and leaked credentials, high-risk changes require approval</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="ecosystem">
+    <div class="container">
+        <h2>Framework Compatibility</h2>
+        <p class="ecosystem-subtitle">LangGraph · AutoGen · CrewAI · GitHub Actions · Claude Code · Custom Agents · Human Approval Nodes</p>
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="/scenarios/code-review.html" class="btn btn-secondary">View Integration Examples →</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

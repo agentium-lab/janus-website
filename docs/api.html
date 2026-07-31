@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference — Janus</title>
+    <meta name="description" content="Janus API reference covering REST endpoints, gRPC services, authentication, and error handling.">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
+        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
+        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
+        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
+        .doc-content li { margin: 6px 0; }
+        .doc-content pre {
+            background: #000; border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; overflow-x: auto; margin: 16px 0;
+        }
+        .doc-content code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px; color: #a5b4fc;
+        }
+        .doc-content p code, .doc-content li code {
+            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #e2e8f0;
+        }
+        .doc-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+        .doc-content th, .doc-content td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        .doc-content th { color: var(--text); font-weight: 600; background: var(--bg-card); }
+        .doc-content td { color: var(--text-muted); }
+        .doc-content .endpoint { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+        .doc-content .endpoint .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; margin-right: 8px; }
+        .doc-content .endpoint .method.get { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .doc-content .endpoint .method.post { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .doc-content .endpoint .method.put { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+        .doc-content .endpoint .method.delete { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .doc-content .endpoint .path { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; }
+        .doc-content .endpoint .desc { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--text); }
+        .breadcrumb span { margin: 0 6px; }
+        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>API Reference</div>
+
+<div class="doc-content">
+    <h1>API Reference</h1>
+    <p>Janus exposes HTTP REST and gRPC APIs. All SDKs communicate through these endpoints.</p>
+
+    <h2>Base URL</h2>
+    <pre><code>http://localhost:8080</code></pre>
+    <p>All requests require the <code>X-Tenant-ID</code> header. Authenticated endpoints require an <code>Authorization: Bearer &lt;api_key&gt;</code> header.</p>
+
+    <h2>REST Endpoints</h2>
+
+    <h3>Health &amp; Readiness</h3>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/healthz</span></div>
+        <div class="desc">Liveness probe. Returns 200 when the process is alive.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/readyz</span></div>
+        <div class="desc">Readiness probe. Checks PG, NATS, Redis connectivity. Returns 200 only when all dependencies are reachable.</div>
+    </div>
+
+    <h3>Mailboxes</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes</span></div>
+        <div class="desc">Create a mailbox. Body: <code>{ "name": "review-mb", "agent_id": "reviewer" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div class="desc">Get mailbox details and stats.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes</span></div>
+        <div class="desc">List all mailboxes for the tenant.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method delete">DELETE</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div class="desc">Delete a mailbox (must be empty).</div>
+    </div>
+
+    <h3>Tasks</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks</span></div>
+        <div class="desc">Publish a task. Body: <code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes/{name}/pull</span></div>
+        <div class="desc">Pull next pending task from a mailbox. Body: <code>{ "agent_id": "reviewer" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/start</span></div>
+        <div class="desc">Start task processing. Body: <code>{ "lease_id": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/ack</span></div>
+        <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "result_ref": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/nack</span></div>
+        <div class="desc">Negative ACK — return to queue or DLQ. Body: <code>{ "lease_id": "...", "reason": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/tasks/{id}</span></div>
+        <div class="desc">Get task details and current state.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/tasks</span></div>
+        <div class="desc">List tasks with optional filters (status, mailbox, source).</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/replay</span></div>
+        <div class="desc">Replay a task from DLQ back to pending.</div>
+    </div>
+
+    <h3>Intent Resolution</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/intent/resolve</span></div>
+        <div class="desc">Resolve natural language to capability. Body: <code>{ "query": "Review Go code for bugs", "tenant_id": "acme" }</code></div>
+    </div>
+
+    <h3>Artifacts</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/artifacts</span></div>
+        <div class="desc">Upload an artifact. Multipart form with tenant isolation.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/artifacts/{id}</span></div>
+        <div class="desc">Download an artifact (tenant-scoped access check).</div>
+    </div>
+
+    <h2>Error Format</h2>
+    <p>All errors return a standard envelope:</p>
+    <pre><code>{
+    "error": {
+        "code": "TENANT_MISMATCH",
+        "message": "Cross-tenant access denied",
+        "details": {
+            "request_tenant": "acme",
+            "resource_tenant": "evil-corp"
+        }
+    }
+}</code></pre>
+
+    <table>
+        <tr><th>HTTP Status</th><th>Error Code</th><th>Description</th></tr>
+        <tr><td>400</td><td>INVALID_REQUEST</td><td>Malformed request body</td></tr>
+        <tr><td>401</td><td>UNAUTHENTICATED</td><td>Missing or invalid API key</td></tr>
+        <tr><td>403</td><td>TENANT_MISMATCH</td><td>Cross-tenant access denied</td></tr>
+        <tr><td>403</td><td>POLICY_DENIED</td><td>Governance policy blocked the operation</td></tr>
+        <tr><td>404</td><td>NOT_FOUND</td><td>Resource not found</td></tr>
+        <tr><td>409</td><td>LEASE_EXPIRED</td><td>Task lease expired, re-pull required</td></tr>
+        <tr><td>429</td><td>RATE_LIMITED</td><td>Budget or concurrency limit exceeded</td></tr>
+        <tr><td>500</td><td>INTERNAL</td><td>Server error</td></tr>
+    </table>
+
+    <h2>Authentication</h2>
+    <p>Janus supports two authentication modes:</p>
+    <ul>
+        <li><strong>API Key</strong> (default, enabled) — pass key via <code>Authorization: Bearer &lt;key&gt;</code> header</li>
+        <li><strong>mTLS</strong> — mutual TLS with client certificates</li>
+    </ul>
+    <p>API keys are tenant-scoped. Create and revoke keys via the CLI:</p>
+    <pre><code>janus auth create-key --tenant acme --role admin
+janus auth revoke-key --tenant acme --key-id &lt;id&gt;</code></pre>
+
+    <div class="note">The full protobuf service definitions and gRPC reflection are available on the server. See the <a href="https://github.com/agentium-lab/Janus" style="color:#818cf8;">GitHub repo</a> for proto files.</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

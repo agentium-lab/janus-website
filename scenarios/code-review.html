@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Review Pipeline — Janus Scenario</title>
+    <meta name="description" content="Multi-agent code review pipeline powered by Janus: PR submission triggers review, code changes, testing, and deployment agents.">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
+        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
+        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
+        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
+        .doc-content li { margin: 6px 0; }
+        .doc-content pre {
+            background: #000; border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; overflow-x: auto; margin: 16px 0;
+        }
+        .doc-content code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px; color: #a5b4fc;
+        }
+        .doc-content p code, .doc-content li code {
+            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #e2e8f0;
+        }
+        .doc-content .step { margin: 20px 0; padding: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+        .doc-content .step h3 { margin-top: 0; }
+        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--text); }
+        .breadcrumb span { margin: 0 6px; }
+        .scenario-flow-chart { background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin: 24px 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; color: #a5b4fc; white-space: pre; overflow-x: auto; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>Scenarios<span>›</span>Code Review Pipeline</div>
+
+<div class="doc-content">
+    <h1>Code Review Pipeline</h1>
+    <p>A fully automated multi-agent code review pipeline. When a PR is submitted, a chain of AI agents reviews, fixes, tests, and ships the code — all coordinated through Janus.</p>
+
+    <div class="scenario-flow-chart">┌─────────┐   ┌──────────┐   ┌────────┐   ┌──────────┐   ┌────────┐
+│ Product │──▶│ Review   │──▶│ Code   │──▶│ Test     │──▶│ Deploy │
+│  Agent  │   │  Agent   │   │ Agent  │   │  Agent   │   │ Agent  │
+└─────────┘   └──────────┘   └────────┘   └──────────┘   └────────┘
+     │              │              │             │              │
+     └──────────────┴──────────────┴─────────────┴──────────────┘
+                                │
+                          ╔══════╧══════╗
+                          ║    Janus    ║
+                          ║  Durable    ║
+                          ║  Broker     ║
+                          ╚═════════════╝</div>
+
+    <h2>How It Works</h2>
+
+    <div class="step">
+        <h3>1. Product Agent submits a PR</h3>
+        <p>The product agent publishes a code review task to Janus with the PR details:</p>
+        <pre><code>client.publish_task({
+    "id": "pr-42-review",
+    "source_agent": "product",
+    "target_type": "mailbox",
+    "target_value": "review-agent-mb",
+    "envelope": {
+        "type": "code_review",
+        "payload": {
+            "pr_url": "https://github.com/org/repo/pull/42",
+            "repo": "org/repo",
+            "branch": "feature/new-auth",
+            "files": ["auth/service.go", "auth/handler.go"]
+        }
+    }
+})</code></pre>
+    </div>
+
+    <div class="step">
+        <h3>2. Review Agent analyzes code</h3>
+        <p>The review agent pulls the task, analyzes the diff for bugs and style issues, then publishes its findings to the next agent in the chain:</p>
+        <pre><code># Pull & start
+result = client.pull_task("review-agent-mb", "reviewer")
+client.start_task(result.task.id, result.lease.lease_id)
+
+# Analyze code... (AI review logic)
+
+# Publish result to code agent
+client.publish_task({
+    "id": "pr-42-code-fix",
+    "source_agent": "reviewer",
+    "target_type": "mailbox",
+    "target_value": "code-agent-mb",
+    "envelope": {
+        "type": "code_fix",
+        "payload": {
+            "pr_url": "https://github.com/org/repo/pull/42",
+            "findings": [
+                {"file": "auth/service.go", "line": 42, "severity": "error", "message": "Missing input validation"},
+                {"file": "auth/handler.go", "line": 15, "severity": "warn", "message": "Unused parameter"}
+            ]
+        }
+    }
+})
+
+# Acknowledge original task
+client.ack_task(result.task.id, {"lease_id": result.lease.lease_id})</code></pre>
+    </div>
+
+    <div class="step">
+        <h3>3. Code Agent fixes issues</h3>
+        <p>The code agent receives the findings, applies fixes, and publishes a new task for the test agent:</p>
+        <pre><code># Pull findings
+result = client.pull_task("code-agent-mb", "coder")
+client.start_task(result.task.id, result.lease.lease_id)
+
+# Apply fixes via GitHub API...
+
+# Publish to test agent
+client.publish_task({
+    "id": "pr-42-test",
+    "source_agent": "coder",
+    "target_type": "mailbox",
+    "target_value": "test-agent-mb",
+    "envelope": {
+        "type": "test_run",
+        "payload": {
+            "pr_url": "https://github.com/org/repo/pull/42",
+            "commit_sha": "abc123"
+        }
+    }
+})
+
+client.ack_task(result.task.id, {"lease_id": result.lease.lease_id})</code></pre>
+    </div>
+
+    <div class="step">
+        <h3>4. Test Agent validates</h3>
+        <p>The test agent runs tests against the fixed code:</p>
+        <pre><code>result = client.pull_task("test-agent-mb", "tester")
+client.start_task(result.task.id, result.lease.lease_id)
+
+# Run CI tests...
+
+client.publish_task({
+    "id": "pr-42-deploy",
+    "source_agent": "tester",
+    "target_type": "mailbox",
+    "target_value": "deploy-agent-mb",
+    "envelope": {
+        "type": "deploy",
+        "payload": {
+            "pr_url": "https://github.com/org/repo/pull/42",
+            "tests_passed": true,
+            "coverage": 87.3
+        }
+    }
+})
+
+client.ack_task(result.task.id, {"lease_id": result.lease.lease_id})</code></pre>
+    </div>
+
+    <div class="step">
+        <h3>5. Deploy Agent ships</h3>
+        <p>The deploy agent merges and deploys the PR to production. Every step is audited and traceable through Janus.</p>
+    </div>
+
+    <h2>Key Takeaways</h2>
+    <ul>
+        <li>Each agent is decoupled — they communicate through Janus mailboxes</li>
+        <li>If any agent crashes mid-task, the task lease expires and another instance can pick it up</li>
+        <li>Governance policies prevent, for example, the deploy agent from running without test approval</li>
+        <li>Full audit trail shows exactly which agent did what and when</li>
+    </ul>
+
+    <div class="note">This scenario can be adapted to any sequential agent workflow: security scanning, document processing, content moderation — the pattern is the same.</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

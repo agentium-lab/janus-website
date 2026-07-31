@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDK Guide — Janus</title>
+    <meta name="description" content="Janus SDK documentation for Go, Python, and TypeScript. Client setup, publishing, pulling, and completing tasks.">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
+        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
+        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
+        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
+        .doc-content li { margin: 6px 0; }
+        .doc-content pre {
+            background: #000; border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; overflow-x: auto; margin: 16px 0;
+        }
+        .doc-content code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px; color: #a5b4fc;
+        }
+        .doc-content p code, .doc-content li code {
+            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #e2e8f0;
+        }
+        .doc-content .sdk-tab { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 20px 0; }
+        .doc-content .sdk-tab h3 { margin-top: 0; }
+        .doc-content .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+        .doc-content .method-item { background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+        .doc-content .method-item .method-name { font-weight: 600; color: #a5b4fc; }
+        .doc-content .method-item .method-desc { color: var(--text-muted); font-size: 13px; }
+        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--text); }
+        .breadcrumb span { margin: 0 6px; }
+        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>SDK Guide</div>
+
+<div class="doc-content">
+    <h1>SDK Guide</h1>
+    <p>Janus provides first-party SDKs for Go, Python, and TypeScript. All three implement the same core operations: create mailboxes, publish tasks, pull tasks, and acknowledge completion.</p>
+
+    <h2>Go SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>Installation</strong></p>
+        <pre><code>go get github.com/agentium-lab/janus-sdk-go</code></pre>
+
+        <p><strong>Client creation</strong></p>
+        <pre><code>import "github.com/agentium-lab/janus-sdk-go/janus"
+
+client := janus.NewClient("http://localhost:8080", janus.WithTenant("acme"))</code></pre>
+
+        <p><strong>Key methods (39 total)</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">CreateMailbox</div><div class="method-desc">Create a new mailbox</div></div>
+            <div class="method-item"><div class="method-name">PublishTask</div><div class="method-desc">Publish a task</div></div>
+            <div class="method-item"><div class="method-name">PullTask</div><div class="method-desc">Pull next task</div></div>
+            <div class="method-item"><div class="method-name">StartTask</div><div class="method-desc">Acquire lease</div></div>
+            <div class="method-item"><div class="method-name">AckTask</div><div class="method-desc">Complete task</div></div>
+            <div class="method-item"><div class="method-name">NackTask</div><div class="method-desc">Fail + retry</div></div>
+            <div class="method-item"><div class="method-name">ListTasks</div><div class="method-desc">Query tasks</div></div>
+            <div class="method-item"><div class="method-name">ResolveIntent</div><div class="method-desc">NL → capability</div></div>
+        </div>
+        <pre><code>// Publish a task
+resp, err := client.PublishTask(ctx, &amp;janus.PublishRequest{
+    SourceAgent: "product",
+    TargetType:  "mailbox",
+    TargetValue: "review-mb",
+    Envelope: janus.Envelope{
+        Type: "code_review",
+        Payload: json.RawMessage(`{"pr_url": "..."}`),
+    },
+})</code></pre>
+    </div>
+
+    <h2>Python SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>Installation</strong></p>
+        <pre><code>pip install janus-sdk</code></pre>
+
+        <p><strong>Client creation</strong></p>
+        <pre><code>from janus_sdk import JanusClient
+client = JanusClient("http://localhost:8080", tenant_id="acme")</code></pre>
+
+        <p><strong>Key methods (34 total)</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">create_mailbox</div><div class="method-desc">Create a mailbox</div></div>
+            <div class="method-item"><div class="method-name">publish_task</div><div class="method-desc">Publish a task</div></div>
+            <div class="method-item"><div class="method-name">pull_task</div><div class="method-desc">Pull next task</div></div>
+            <div class="method-item"><div class="method-name">start_task</div><div class="method-desc">Start + acquire lease</div></div>
+            <div class="method-item"><div class="method-name">ack_task</div><div class="method-desc">Acknowledge completion</div></div>
+            <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">Negative ACK</div></div>
+            <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">List/filter tasks</div></div>
+            <div class="method-item"><div class="method-name">resolve_intent</div><div class="method-desc">Resolve intent</div></div>
+        </div>
+        <pre><code># Create mailbox
+client.create_mailbox("review-mb", agent_id="reviewer")
+
+# Publish task
+resp = client.publish_task({
+    "id": "task-001",
+    "source_agent": "product",
+    "target_type": "mailbox",
+    "target_value": "review-mb",
+    "envelope": {"type": "code_review", "payload": {...}}
+})</code></pre>
+    </div>
+
+    <h2>TypeScript SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>Installation</strong></p>
+        <pre><code>npm install @agentium/janus-sdk</code></pre>
+
+        <p><strong>Client creation</strong></p>
+        <pre><code>import { JanusClient } from "@agentium/janus-sdk";
+const client = new JanusClient("http://localhost:8080", { tenantId: "acme" });</code></pre>
+
+        <p><strong>Key methods (30 total)</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">createMailbox</div><div class="method-desc">Create a mailbox</div></div>
+            <div class="method-item"><div class="method-name">publishTask</div><div class="method-desc">Publish a task</div></div>
+            <div class="method-item"><div class="method-name">pullTask</div><div class="method-desc">Pull next task</div></div>
+            <div class="method-item"><div class="method-name">startTask</div><div class="method-desc">Start + acquire lease</div></div>
+            <div class="method-item"><div class="method-name">ackTask</div><div class="method-desc">Acknowledge completion</div></div>
+            <div class="method-item"><div class="method-name">nackTask</div><div class="method-desc">Negative ACK</div></div>
+            <div class="method-item"><div class="method-name">listTasks</div><div class="method-desc">List/filter tasks</div></div>
+            <div class="method-item"><div class="method-name">resolveIntent</div><div class="method-desc">Resolve intent</div></div>
+        </div>
+        <pre><code>// Create mailbox
+await client.createMailbox("review-mb", { agentId: "reviewer" });
+
+// Publish task
+const resp = await client.publishTask({
+    id: "task-001",
+    sourceAgent: "product",
+    targetType: "mailbox",
+    targetValue: "review-mb",
+    envelope: { type: "code_review", payload: {...} }
+});</code></pre>
+    </div>
+
+    <h2>CLI</h2>
+    <p>The Janus CLI provides task and mailbox management from the terminal:</p>
+    <pre><code># Task operations
+janus task list --tenant acme
+janus task get task-001 --tenant acme
+janus task replay task-001 --tenant acme
+
+# Mailbox operations
+janus mailbox list --tenant acme
+janus mailbox inspect review-mb --tenant acme
+
+# System
+janus status
+janus version</code></pre>
+
+    <div class="note">All three SDKs support HTTP and gRPC transports, and respect the same error envelope format. Use the CLI for ops tasks — replay from DLQ, inspect mailbox depth, check system health.</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

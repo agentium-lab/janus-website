@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Concepts — Janus</title>
+    <meta name="description" content="Understand Janus core concepts: mailboxes, tasks, leases, envelopes, routing, governance, and protocol gateways.">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
+        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
+        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
+        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
+        .doc-content li { margin: 6px 0; }
+        .doc-content pre {
+            background: #000; border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; overflow-x: auto; margin: 16px 0;
+        }
+        .doc-content code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px; color: #a5b4fc;
+        }
+        .doc-content p code, .doc-content li code {
+            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #e2e8f0;
+        }
+        .doc-content .concept-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 20px 0; }
+        .doc-content .concept-card h3 { margin-top: 0; }
+        .doc-content .concept-card p { margin-bottom: 0; }
+        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--text); }
+        .breadcrumb span { margin: 0 6px; }
+        .arch-flow { background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 20px 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; color: #a5b4fc; white-space: pre; overflow-x: auto; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>Core Concepts</div>
+
+<div class="doc-content">
+    <h1>Core Concepts</h1>
+    <p>Janus is a durable agent task broker. It sits between agents and reliably delivers tasks with governance, routing, and observability.</p>
+
+    <div class="arch-flow">┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Producer   │     │   Janus     │     │  Consumer   │
+│   Agent     │────▶│   Broker    │────▶│   Agent     │
+└─────────────┘     └─────────────┘     └─────────────┘
+                    │  Postgres    │
+                    │  + NATS      │
+                    │  (Durable)   │
+                    └─────────────┘</div>
+
+    <h2>Task</h2>
+    <p>The fundamental unit of work. A task carries an opaque payload (the <strong>envelope</strong>) from a source agent to a target consumer. Every task has a unique ID, a tenant scope, and a lifecycle state:</p>
+    <pre><code>pending → claimed → in_progress → completed
+                                        → failed
+                                        → nacked → pending (retry)
+                                                  → dlq</code></pre>
+
+    <h2>Mailbox</h2>
+    <p>A named queue where tasks are delivered. Agents pull tasks from a mailbox they own. Mailboxes are durable — if an agent crashes, tasks remain until the agent comes back and pulls them.</p>
+    <p>Key properties:</p>
+    <ul>
+        <li>Scoped to a tenant</li>
+        <li>Owned by one or more agents (agent_id)</li>
+        <li>Tasks are pulled FIFO within priority order</li>
+    </ul>
+
+    <h2>Lease</h2>
+    <p>When an agent pulls a task, it receives a time-bound lease. The lease prevents other agents from claiming the same task. If the agent crashes without ACKing:</p>
+    <ul>
+        <li>The lease expires after the configured timeout</li>
+        <li>The task reverts to <code>pending</code> and becomes available for another agent to pull</li>
+        <li>Idempotent ACK/NACK ensures exactly-once semantics</li>
+    </ul>
+
+    <h2>Envelope</h2>
+    <p>The payload wrapper. Contains:</p>
+    <ul>
+        <li><code>type</code> — message type identifier</li>
+        <li><code>payload</code> — the actual data (structured JSON)</li>
+        <li><code>priority</code> — high / normal / low</li>
+        <li><code>context_refs</code> — references to shared artifacts (files, images, previous results)</li>
+    </ul>
+
+    <h2>Routing &amp; Capability Resolution</h2>
+    <p>Janus supports two dispatch modes:</p>
+    <ul>
+        <li><strong>Direct</strong> — publish to a specific mailbox</li>
+        <li><strong>Capability-based</strong> — describe what you need, Janus finds the best agent</li>
+    </ul>
+    <p>The <strong>Intent Resolver</strong> accepts natural language descriptions and matches them to registered agent capabilities:</p>
+    <pre><code>client.resolve_intent("Review a Go pull request for race conditions")
+# → Confidence: 0.92
+# → Matched capability: "go-code-review"
+# → Suggested target: "review-mb"</code></pre>
+
+    <h2>Governance</h2>
+    <p>Every task dispatch passes through policy and budget checks:</p>
+    <ul>
+        <li><strong>Policy Engine</strong> — who can call whom, with what data shape</li>
+        <li><strong>Budget Control</strong> — RPM / TPM / concurrency / daily cost limits</li>
+        <li><strong>Audit Trail</strong> — every publish, pull, start, ack, nack is recorded</li>
+        <li><strong>Human Approval</strong> — high-risk tasks can require manual approval</li>
+    </ul>
+
+    <h2>Protocol Gateways</h2>
+    <p>Janus speaks multiple agent communication protocols natively:</p>
+    <ul>
+        <li><strong>A2A Gateway</strong> — Google Agent-to-Agent protocol (Agent Card, Task Send)</li>
+        <li><strong>ACP Gateway</strong> — Anthropic Communication Protocol (Manifest, Runs)</li>
+        <li><strong>MCP Gateway</strong> — Model Context Protocol (Tools, Resources)</li>
+        <li><strong>REST API + gRPC</strong> — native Janus API for SDK clients</li>
+    </ul>
+
+    <h2>Durability Model</h2>
+    <p>Tasks are dual-written to PostgreSQL (source of truth) and NATS JetStream (fast delivery). If the broker process crashes mid-flight:</p>
+    <ul>
+        <li>In-flight tasks that were claimed but not ACKed have their leases expire</li>
+        <li>The outbox ensures no tasks are lost during broker crashes</li>
+        <li>Manual replay from dead letter queue is available via CLI</li>
+    </ul>
+
+    <h2>Tenant Isolation</h2>
+    <p>Every task, mailbox, and artifact is scoped to a tenant. Cross-tenant access is automatically denied. All audit events are tagged with tenant ID.</p>
+
+    <div class="note">Janus uses <strong>dual-write persistence</strong> (PG + NATS) for durability. The broker survives agent crashes, network partitions, and its own restarts without losing tasks.</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

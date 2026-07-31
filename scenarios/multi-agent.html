@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Framework Integration — Janus Scenario</title>
+    <meta name="description" content="Integrate Janus with LangGraph, AutoGen, CrewAI, and GitHub Actions for reliable multi-agent collaboration in production.">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
+        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
+        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
+        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
+        .doc-content li { margin: 6px 0; }
+        .doc-content pre {
+            background: #000; border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; overflow-x: auto; margin: 16px 0;
+        }
+        .doc-content code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px; color: #a5b4fc;
+        }
+        .doc-content p code, .doc-content li code {
+            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #e2e8f0;
+        }
+        .doc-content .framework-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 20px 0; }
+        .doc-content .framework-card h3 { margin-top: 0; }
+        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--text); }
+        .breadcrumb span { margin: 0 6px; }
+        .arch-flow { background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 20px 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; color: #a5b4fc; white-space: pre; overflow-x: auto; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <span>Janus</span>
+        </a>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb"><a href="/">Home</a><span>›</span>Scenarios<span>›</span>Multi-Agent Integration</div>
+
+<div class="doc-content">
+    <h1>Multi-Agent Framework Integration</h1>
+    <p>Janus is framework-agnostic. It brokers tasks between agents built with different frameworks — LangGraph, AutoGen, CrewAI, GitHub Actions, Claude Code, or custom implementations — all through a single durable backbone.</p>
+
+    <div class="arch-flow">┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│ LangGraph│  │  AutoGen │  │  CrewAI  │  │  GitHub  │
+│  Agent   │  │  Agent   │  │  Agent   │  │ Actions  │
+└────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+     │             │             │             │
+     └─────────────┴─────────────┴─────────────┘
+                         │
+                   ╔═════╧═════╗
+                   ║   Janus   ║
+                   ║  Broker   ║
+                   ╚═══════════╝</div>
+
+    <h2>LangGraph Integration</h2>
+    <div class="framework-card">
+        <p>LangGraph agents publish tasks to Janus mailboxes and pull results from downstream agents. The Janus node acts as a reliable handoff between graph steps:</p>
+        <pre><code>from langgraph.graph import StateGraph
+from janus_sdk import JanusClient
+
+client = JanusClient("http://janus:8080", tenant_id="acme")
+
+class AgentState(TypedDict):
+    pr_url: str
+    review_result: dict
+
+def review_node(state: AgentState):
+    client.publish_task({
+        "source_agent": "langgraph-review",
+        "target_type": "mailbox",
+        "target_value": "review-mb",
+        "envelope": {"type": "review", "payload": state}
+    })
+    return state
+
+def collect_node(state: AgentState):
+    result = client.pull_task("langgraph-collect-mb", "collector")
+    return {"review_result": result.task.envelope.payload}
+
+graph = StateGraph(AgentState)
+graph.add_node(review_node)
+graph.add_node(collect_node)
+graph.add_edge("review_node", "collect_node")</code></pre>
+        <p>LangGraph handles the orchestration graph; Janus ensures tasks survive agent restarts and provides governance between steps.</p>
+    </div>
+
+    <h2>AutoGen Integration</h2>
+    <div class="framework-card">
+        <p>AutoGen agents use Janus as a message bus for async team collaboration:</p>
+        <pre><code>from autogen import AssistantAgent, UserProxyAgent
+from janus_sdk import JanusClient
+
+client = JanusClient("http://janus:8080", tenant_id="acme")
+
+class JanusAgent(AssistantAgent):
+    """AutoGen agent that sends/receives messages via Janus."""
+
+    def send(self, message, recipient, **kwargs):
+        client.publish_task({
+            "source_agent": self.name,
+            "target_type": "mailbox",
+            "target_value": f"{recipient}-mb",
+            "envelope": {"type": "autogen_msg", "payload": message}
+        })
+
+    def receive(self, message, sender, **kwargs):
+        # Messages arrive through durable mailboxes
+        # Agent pulls them when ready
+        result = client.pull_task(f"{self.name}-mb", self.name)
+        return result.task.envelope.payload
+
+# AutoGen team with Janus backbone
+reviewer = JanusAgent(name="reviewer", llm_config=llm_config)
+coder = JanusAgent(name="coder", llm_config=llm_config)</code></pre>
+    </div>
+
+    <h2>CrewAI Integration</h2>
+    <div class="framework-card">
+        <p>CrewAI agents use Janus for persistent task handoff between crew members:</p>
+        <pre><code>from crewai import Agent, Task, Crew
+from janus_sdk import JanusClient
+
+client = JanusClient("http://janus:8080", tenant_id="acme")
+
+class JanusCrewAgent(Agent):
+    """CrewAI agent with Janus-backed task queue."""
+
+    def execute_task(self, task, context=None):
+        # Publish task to Janus for the next crew member
+        client.publish_task({
+            "source_agent": self.role,
+            "target_type": "mailbox",
+            "target_value": f"{task.agent.role}-mb",
+            "envelope": {"type": "crewai_task", "payload": task.description}
+        })
+        # Pull result from own mailbox
+        result = client.pull_task(f"{self.role}-mb", self.role)
+        return result.task.envelope.payload
+
+# Crew with Janus resilience
+crew = Crew(
+    agents=[reviewer, coder, tester],
+    tasks=[review_task, code_task, test_task],
+    process=Process.sequential
+)</code></pre>
+    </div>
+
+    <h2>GitHub Actions Integration</h2>
+    <div class="framework-card">
+        <p>GitHub Actions triggers Janus workflows and waits for agent results:</p>
+        <pre><code># .github/workflows/agent-review.yml
+name: Agent Code Review
+on: [pull_request]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Request AI review via Janus
+        run: |
+          pip install janus-sdk
+          python -c "
+          from janus_sdk import JanusClient
+          client = JanusClient('${{ secrets.JANUS_URL }}',
+                              api_key='${{ secrets.JANUS_API_KEY }}')
+          client.publish_task({
+              'source_agent': 'github-actions',
+              'target_type': 'mailbox',
+              'target_value': 'review-mb',
+              'envelope': {
+                  'type': 'pr_review',
+                  'payload': {'pr': '${{ github.event.pull_request.html_url }}'}
+              }
+          })
+          "
+
+      - name: Wait for review result
+        run: |
+          python -c "
+          import time
+          from janus_sdk import JanusClient
+          client = JanusClient('${{ secrets.JANUS_URL }}',
+                              api_key='${{ secrets.JANUS_API_KEY }}')
+          while True:
+              result = client.pull_task('github-results-mb', 'github-actions')
+              if result:
+                  print('Review complete:', result.task.envelope.payload)
+                  break
+              time.sleep(5)
+          "</code></pre>
+    </div>
+
+    <h2>What Janus Provides</h2>
+    <ul>
+        <li><strong>Durability</strong> — tasks survive agent crashes across all frameworks</li>
+        <li><strong>Governance</strong> — unified policy and budget enforcement regardless of framework</li>
+        <li><strong>Audit</strong> — cross-framework traceability with a single trace ID</li>
+        <li><strong>Protocol bridging</strong> — LangGraph agents can hand off to AutoGen agents seamlessly</li>
+        <li><strong>Observability</strong> — Prometheus metrics and OTel tracing across the entire agent mesh</li>
+    </ul>
+
+    <div class="note">You don't need to choose one framework. Janus lets you mix and match — use LangGraph for complex DAG orchestration, AutoGen for conversational teams, and GitHub Actions for CI triggers. They all interoperate through Janus mailboxes.</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
