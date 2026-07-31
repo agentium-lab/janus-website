@@ -8,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css?v=20260731">
     <script src="/assets/app.js?v=20260731" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 </head>
 <body>
 <div class="bg" aria-hidden="true">
@@ -79,81 +80,93 @@
     <h2>Architecture Overview</h2>
     <p>Janus is layered into four planes. External clients enter through protocol gateways; stateless core services own the task lifecycle, governance, and background workers; all durable state is externalized. Every layer scales independently.</p>
 
-    <figure class="sys-arch">
-        <div class="sys-tier t-ext">
-            <div class="sys-tier-head">
-                <span class="sys-tier-title">External Clients</span>
-                <span class="sys-tier-sub">agents &amp; tooling that talk to Janus</span>
-            </div>
-            <div class="sys-tier-body">
-                <span class="sys-node">A2A Agents</span>
-                <span class="sys-node">ACP Agents</span>
-                <span class="sys-node">SDK Agents</span>
-                <span class="sys-node">MCP Servers</span>
-                <span class="sys-node">Dashboard UI</span>
-            </div>
-        </div>
-        <div class="sys-flow"></div>
-        <div class="sys-tier t-in">
-            <div class="sys-tier-head">
-                <span class="sys-tier-title">Ingress Plane</span>
-                <span class="sys-tier-sub">protocol adaptation &amp; authentication</span>
-            </div>
-            <div class="sys-tier-body">
-                <span class="sys-node">Protocol Gateways</span>
-                <span class="sys-node">HTTP / gRPC API</span>
-                <span class="sys-node">WebSocket Gateway</span>
-            </div>
-        </div>
-        <div class="sys-flow"></div>
-        <div class="sys-tier t-core">
-            <div class="sys-tier-head">
-                <span class="sys-tier-title">Core Services</span>
-                <span class="sys-tier-sub">stateless, horizontally replicated</span>
-            </div>
-            <div class="sys-group">
-                <div class="sys-group-label">Data Plane — task flow</div>
-                <div class="sys-tier-body">
-                    <span class="sys-node">Task</span>
-                    <span class="sys-node">Mailbox</span>
-                    <span class="sys-node">Dispatch</span>
-                    <span class="sys-node">Lease</span>
-                </div>
-            </div>
-            <div class="sys-group">
-                <div class="sys-group-label">Control Plane — governance</div>
-                <div class="sys-tier-body">
-                    <span class="sys-node">Policy</span>
-                    <span class="sys-node">Budget</span>
-                    <span class="sys-node">Approval</span>
-                    <span class="sys-node">Audit</span>
-                </div>
-            </div>
-            <div class="sys-group">
-                <div class="sys-group-label">Background Workers</div>
-                <div class="sys-tier-body">
-                    <span class="sys-node">Outbox Publisher</span>
-                    <span class="sys-node">Event Projector</span>
-                    <span class="sys-node">Lease Scanner</span>
-                    <span class="sys-node">Heartbeat Sweep</span>
-                </div>
-            </div>
-        </div>
-        <div class="sys-flow"></div>
-        <div class="sys-tier t-infra">
-            <div class="sys-tier-head">
-                <span class="sys-tier-title">Infrastructure</span>
-                <span class="sys-tier-sub">externalized state, highly available</span>
-            </div>
-            <div class="sys-tier-body">
-                <span class="sys-node">PostgreSQL</span>
-                <span class="sys-node">NATS JetStream</span>
-                <span class="sys-node">Redis</span>
-                <span class="sys-node">Artifact Store</span>
-            </div>
-        </div>
-        <figcaption class="arch-caption">The ingress plane only adapts protocols. Core services own state machines and governance. PostgreSQL is the source of truth; NATS carries deliveries and events; Redis holds only heartbeats and rate counters.</figcaption>
-    </figure>
+    <pre class="mermaid">
+flowchart TB
+    classDef ext fill:#0b2433,stroke:#22d3ee,color:#e9eefb,stroke-width:1.5px
+    classDef edge fill:#33240b,stroke:#fbbf24,color:#e9eefb,stroke-width:1.5px
+    classDef ing fill:#0b1733,stroke:#60a5fa,color:#e9eefb,stroke-width:1.5px
+    classDef data fill:#16114a,stroke:#818cf8,color:#e9eefb,stroke-width:1.5px
+    classDef ctrl fill:#2b114a,stroke:#a855f7,color:#e9eefb,stroke-width:1.5px
+    classDef wrk fill:#0d3a26,stroke:#34d399,color:#e9eefb,stroke-width:1.5px
+    classDef infra fill:#4a1118,stroke:#fb7185,color:#e9eefb,stroke-width:1.5px
+
+    subgraph EXT["External Clients"]
+        direction LR
+        A1["A2A Agents"]:::ext
+        A2["ACP Agents"]:::ext
+        A3["SDK Agents"]:::ext
+        A4["MCP Servers"]:::ext
+        A5["Dashboard UI"]:::ext
+    end
+
+    subgraph EDGE["Edge / Security"]
+        direction LR
+        B1["DNS / GSLB"]:::edge
+        B2["WAF / API Gateway"]:::edge
+        B3["mTLS / OIDC"]:::edge
+        B4["Rate Limit / Tenant Gate"]:::edge
+    end
+
+    subgraph ING["Ingress Plane — protocol adaptation"]
+        direction LR
+        C1["A2A Gateway"]:::ing
+        C2["SDK Gateway"]:::ing
+        C3["HTTP / gRPC API"]:::ing
+        C4["WebSocket Gateway"]:::ing
+    end
+
+    subgraph CORE["Core Services — stateless · horizontally replicated"]
+        direction LR
+        subgraph DATA["Data Plane — task flow"]
+            direction LR
+            D1["TaskSvc"]:::data
+            D2["Mailbox"]:::data
+            D3["DispSvc"]:::data
+            D4["Lease"]:::data
+        end
+        subgraph CTRL["Control Plane — governance"]
+            direction LR
+            E1["Registry"]:::ctrl
+            E2["Policy"]:::ctrl
+            E3["Budget"]:::ctrl
+            E4["Approval"]:::ctrl
+            E5["Audit"]:::ctrl
+        end
+        subgraph WRK["Background Workers — lease-safe"]
+            direction LR
+            F1["OutboxPub"]:::wrk
+            F2["EventProj"]:::wrk
+            F3["LeaseScan"]:::wrk
+            F4["HbSweep"]:::wrk
+        end
+    end
+
+    subgraph INFRA["Infrastructure — externalized · highly available"]
+        direction LR
+        G1[("PostgreSQL HA")]:::infra
+        G2[("NATS JetStream")]:::infra
+        G3[("Redis / Valkey")]:::infra
+        G4[("Artifact Store")]:::infra
+    end
+
+    EXT ==> EDGE ==> ING ==> CORE
+    D1 -->|"state · outbox"| G1
+    E5 -->|"audit projection"| G1
+    F1 -->|"publish tasks / events"| G2
+    D2 -->|"deliver · consume"| G2
+    C3 -.->|"heartbeat · rate counters"| G3
+    D3 -->|"result_ref"| G4
+
+    style EXT fill:#071826,stroke:#22d3ee,color:#e9eefb
+    style EDGE fill:#1f1807,stroke:#fbbf24,color:#e9eefb
+    style ING fill:#070f26,stroke:#60a5fa,color:#e9eefb
+    style CORE fill:#0a0818,stroke:#818cf8,color:#e9eefb
+    style DATA fill:#0d0a24,stroke:#818cf8,color:#99a4bd
+    style CTRL fill:#150a24,stroke:#a855f7,color:#99a4bd
+    style WRK fill:#071c14,stroke:#34d399,color:#99a4bd
+    style INFRA fill:#180a10,stroke:#fb7185,color:#e9eefb
+    </pre>
+    <p class="note">The ingress plane only adapts protocols. Core services own state machines and governance. PostgreSQL is the source of truth; NATS carries deliveries and events; Redis holds only heartbeats and rate counters.</p>
 
     <p>The <strong>ingress plane</strong> does only protocol adaptation and authentication — it holds no business logic. The <strong>core services</strong> own the task state machine, policy enforcement, budget accounting, and audit; they are stateless and scale horizontally. <strong>Background workers</strong> (outbox publisher, event projector, lease scanner, heartbeat sweep) run independently and coordinate through database leases and idempotency keys, so multiple replicas never double-deliver.</p>
     <p><strong>PostgreSQL</strong> is the source of truth for task state, the transactional outbox, budgets, and audit projections. <strong>NATS JetStream</strong> carries task deliveries and domain events through durable streams and per-mailbox consumers. <strong>Redis</strong> holds only agent heartbeats and short-window rate counters — never durable facts.</p>
@@ -267,5 +280,35 @@
         </div>
     </div>
 </footer>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+          background: '#070b16',
+          fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif",
+          fontSize: '13px',
+          lineColor: '#69748f',
+          textColor: '#e9eefb',
+          primaryColor: '#0d1426',
+          primaryTextColor: '#e9eefb',
+          primaryBorderColor: '#6366f1',
+          secondaryColor: '#0a0f1e',
+          tertiaryColor: '#0a0f1e',
+          edgeLabelBackground: '#0a0f1e',
+          clusterBkg: '#0a0f1e',
+          clusterBorder: '#3f4a63'
+        },
+        flowchart: {
+          curve: 'basis',
+          padding: 10,
+          nodeSpacing: 28,
+          rankSpacing: 40,
+          useMaxWidth: true
+        }
+      });
+      mermaid.run();
+    </script>
 </body>
 </html>
