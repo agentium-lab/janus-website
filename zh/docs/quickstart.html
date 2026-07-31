@@ -54,15 +54,39 @@
             <li><a href="#prerequisites">前置条件</a></li>
             <li><a href="#get-source">1. 获取源码</a></li>
             <li><a href="#start-janus">2. Docker 启动</a></li>
-            <li><a href="#configure">3. 配置</a></li>
-            <li><a href="#build-from-source">4. 源码构建</a></li>
+            <li><a href="#build-from-source">3. 源码构建</a></li>
+            <li><a href="#configure">4. 配置</a>
+                <ul>
+                    <li><a href="#config-env-vars">环境变量</a></li>
+                    <li><a href="#config-yaml">YAML 配置文件</a></li>
+                    <li><a href="#config-project">项目配置</a></li>
+                    <li><a href="#config-field-reference">字段参考</a></li>
+                    <li><a href="#config-multi-agent">多 Agent 示例</a></li>
+                    <li><a href="#config-dynamic-agent">动态添加 Agent</a></li>
+                    <li><a href="#config-auth">鉴权</a></li>
+                </ul>
+            </li>
             <li><a href="#install-sdk">5. 安装 SDK</a></li>
             <li><a href="#publish-task">6. 发布任务</a></li>
             <li><a href="#pull-task">7. 拉取完成</a></li>
             <li><a href="#verify-cli">8. CLI 验证</a></li>
-            <li><a href="#cli-reference">CLI 参考</a></li>
+            <li><a href="#cli-reference">CLI 参考</a>
+                <ul>
+                    <li><a href="#cli-global-flags">全局参数</a></li>
+                    <li><a href="#cli-command-tree">命令分组</a></li>
+                    <li><a href="#cli-project">项目工作流</a></li>
+                    <li><a href="#cli-api-keys">API 密钥</a></li>
+                    <li><a href="#cli-tasks-mailboxes">任务与邮箱</a></li>
+                    <li><a href="#cli-dashboard">Dashboard</a></li>
+                </ul>
+            </li>
             <li><a href="#production">生产部署</a></li>
-            <li><a href="#distributed">分布式部署</a></li>
+            <li><a href="#distributed">分布式部署</a>
+                <ul>
+                    <li><a href="#distributed-scaling">水平扩展计算层</a></li>
+                    <li><a href="#distributed-state">扩展状态层</a></li>
+                </ul>
+            </li>
             <li><a href="#whats-next">下一步</a></li>
         </ul>
     </aside>
@@ -102,10 +126,23 @@
         <li><code>9090</code> — gRPC API</li>
     </ul>
 
-    <h2 id="configure">3. 配置 Janus</h2>
+    <h2 id="build-from-source">3. 从源码构建（可选）</h2>
+    <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
+    <pre><code><span class="tok-c"># 启动三个依赖服务</span>
+<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+
+<span class="tok-c"># 编译服务端二进制</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
+
+<span class="tok-c"># 通过环境变量运行</span>
+<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+
+    <h2 id="configure">4. 配置 Janus</h2>
     <p>Janus 通过<strong>环境变量</strong>（优先级最高）和/或 <strong>YAML 配置文件</strong>读取配置。Compose 文件已为本地开发配好合理默认值。</p>
 
-    <h3>环境变量</h3>
+    <h3 id="config-env-vars">环境变量</h3>
     <p>最常调整的变量（均以 <code>JANUS_</code> 为前缀）：</p>
     <table>
         <tr><th>变量</th><th>默认值</th><th>说明</th></tr>
@@ -122,7 +159,7 @@
         <tr><td><code>JANUS_TLS_ENABLED</code></td><td>false</td><td>开启 TLS（配合 CERT_FILE / KEY_FILE / CLIENT_CA_FILE）</td></tr>
     </table>
 
-    <h3>YAML 配置文件</h3>
+    <h3 id="config-yaml">YAML 配置文件</h3>
     <p>复杂部署时，通过 <code>JANUS_CONFIG_FILE</code> 指定 YAML 文件。可从参考文件复制起步：</p>
     <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
 
@@ -169,7 +206,7 @@
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector 地址</span></code></pre>
 
-    <h3>项目配置（声明式）</h3>
+    <h3 id="config-project">项目配置（声明式）</h3>
     <p>第二个 YAML 文件 —— <strong>项目配置</strong> —— 让你以代码形式声明 Agent、预算与治理策略。它与上面的服务端配置互补（后者管连接与运行时）：项目文件定义你的<em>租户拓扑</em>。通过 Janus CLI 应用：</p>
     <pre><code><span class="tok-c"># 1. 在当前目录生成初始 janus.project.yaml</span>
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span>
@@ -424,19 +461,6 @@
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_KEY_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.key</span>
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
     <p>生产环境请保持 <code>auth.enabled</code> 开启 —— 关闭后所有 API 端点都不再鉴权。</p>
-
-    <h2 id="build-from-source">4. 从源码构建（可选）</h2>
-    <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
-    <pre><code><span class="tok-c"># 启动三个依赖服务</span>
-<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
-
-<span class="tok-c"># 编译服务端二进制</span>
-<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
-
-<span class="tok-c"># 通过环境变量运行</span>
-<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
 
     <h2 id="install-sdk">5. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>

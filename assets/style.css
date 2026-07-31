@@ -1133,6 +1133,30 @@ pre code {
   padding: 6px 0;
   margin: 0;
 }
+.doc-toc ul ul {
+  padding: 2px 0 4px;
+}
+.doc-toc ul ul a {
+  padding: 5px 18px 5px 40px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  border-left: 1px solid var(--border);
+  margin-left: 20px;
+}
+.doc-toc ul ul a:hover {
+  color: var(--primary-2);
+  background: var(--bg-hover);
+  padding-left: 44px;
+}
+.doc-toc ul ul a::before {
+  width: 2px;
+  height: 0;
+  left: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 0 2px 2px 0;
+}
+.doc-toc ul ul a:hover::before { height: 60%; }
 .doc-toc a {
   position: relative;
   display: block;

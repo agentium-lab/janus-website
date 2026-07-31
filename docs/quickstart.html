@@ -53,15 +53,39 @@
             <li><a href="#prerequisites">Prerequisites</a></li>
             <li><a href="#get-source">1. Get the Source</a></li>
             <li><a href="#start-janus">2. Start with Docker</a></li>
-            <li><a href="#configure">3. Configure</a></li>
-            <li><a href="#build-from-source">4. Build from Source</a></li>
+            <li><a href="#build-from-source">3. Build from Source</a></li>
+            <li><a href="#configure">4. Configure</a>
+                <ul>
+                    <li><a href="#config-env-vars">Environment Variables</a></li>
+                    <li><a href="#config-yaml">YAML Config File</a></li>
+                    <li><a href="#config-project">Project Config</a></li>
+                    <li><a href="#config-field-reference">Field Reference</a></li>
+                    <li><a href="#config-multi-agent">Multi-Agent Example</a></li>
+                    <li><a href="#config-dynamic-agent">Dynamic Agents</a></li>
+                    <li><a href="#config-auth">Authentication</a></li>
+                </ul>
+            </li>
             <li><a href="#install-sdk">5. Install the SDK</a></li>
             <li><a href="#publish-task">6. Publish a Task</a></li>
             <li><a href="#pull-task">7. Pull &amp; Complete</a></li>
             <li><a href="#verify-cli">8. Verify via CLI</a></li>
-            <li><a href="#cli-reference">CLI Reference</a></li>
+            <li><a href="#cli-reference">CLI Reference</a>
+                <ul>
+                    <li><a href="#cli-global-flags">Global Flags</a></li>
+                    <li><a href="#cli-command-tree">Command Groups</a></li>
+                    <li><a href="#cli-project">Project Workflow</a></li>
+                    <li><a href="#cli-api-keys">API Keys</a></li>
+                    <li><a href="#cli-tasks-mailboxes">Tasks &amp; Mailboxes</a></li>
+                    <li><a href="#cli-dashboard">Dashboard</a></li>
+                </ul>
+            </li>
             <li><a href="#production">Production</a></li>
-            <li><a href="#distributed">Distributed</a></li>
+            <li><a href="#distributed">Distributed</a>
+                <ul>
+                    <li><a href="#distributed-scaling">Scaling the Compute Tier</a></li>
+                    <li><a href="#distributed-state">Scaling the State Tier</a></li>
+                </ul>
+            </li>
             <li><a href="#whats-next">What's Next</a></li>
         </ul>
     </aside>
@@ -101,10 +125,23 @@
         <li><code>9090</code> — gRPC API</li>
     </ul>
 
-    <h2 id="configure">3. Configure Janus</h2>
+    <h2 id="build-from-source">3. Build from Source (optional)</h2>
+    <p>To run Janus outside Docker (development, custom builds, debugging):</p>
+    <pre><code><span class="tok-c"># Start the three dependencies</span>
+<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+
+<span class="tok-c"># Build the server binary</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
+
+<span class="tok-c"># Run with environment variables</span>
+<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+
+    <h2 id="configure">4. Configure Janus</h2>
     <p>Janus reads configuration from <strong>environment variables</strong> (highest priority) and/or a <strong>YAML config file</strong>. The Compose file already wires up sensible defaults for local development.</p>
 
-    <h3>Environment Variables</h3>
+    <h3 id="config-env-vars">Environment Variables</h3>
     <p>The most commonly tuned variables (all prefixed <code>JANUS_</code>):</p>
     <table>
         <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
@@ -121,7 +158,7 @@
         <tr><td><code>JANUS_TLS_ENABLED</code></td><td>false</td><td>Enable TLS (set with CERT_FILE / KEY_FILE / CLIENT_CA_FILE)</td></tr>
     </table>
 
-    <h3>YAML Config File</h3>
+    <h3 id="config-yaml">YAML Config File</h3>
     <p>For complex deployments, point Janus at a YAML file via <code>JANUS_CONFIG_FILE</code>. Start from the reference file:</p>
     <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
 
@@ -168,7 +205,7 @@
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector endpoint</span></code></pre>
 
-    <h3>Project Config (Declarative)</h3>
+    <h3 id="config-project">Project Config (Declarative)</h3>
     <p>A second YAML file — the <strong>project config</strong> — declares your agents, budgets, and governance policies as code. It complements the server config above (connections &amp; runtime): the project file defines your <em>tenant topology</em>. Apply it with the Janus CLI:</p>
     <pre><code><span class="tok-c"># 1. Generate a starter janus.project.yaml in the current directory</span>
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span>
@@ -423,19 +460,6 @@
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_KEY_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.key</span>
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
     <p>Keep <code>auth.enabled</code> on in production — when disabled, every API endpoint is unauthenticated.</p>
-
-    <h2 id="build-from-source">4. Build from Source (optional)</h2>
-    <p>To run Janus outside Docker (development, custom builds, debugging):</p>
-    <pre><code><span class="tok-c"># Start the three dependencies</span>
-<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
-
-<span class="tok-c"># Build the server binary</span>
-<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
-
-<span class="tok-c"># Run with environment variables</span>
-<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
 
     <h2 id="install-sdk">5. Install the Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
