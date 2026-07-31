@@ -9,12 +9,24 @@
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+    <span class="bg-noise"></span>
+</div>
+
 <nav class="navbar">
     <div class="nav-container">
         <a href="/" class="nav-logo">
-            <img src="assets/logo.svg" alt="Janus" height="28">
+            <img src="assets/logo.svg" alt="Janus" height="30">
             <span>Janus</span>
         </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </label>
         <div class="nav-links">
             <a href="/docs/quickstart.html">Quick Start</a>
             <a href="/docs/concepts.html">Concepts</a>
@@ -27,19 +39,34 @@
 </nav>
 
 <section class="hero">
+    <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
-        <h1>Production-Grade<br>Agent Task Broker</h1>
+        <a href="/docs/quickstart.html" class="hero-badge">
+            <span class="tag">v1.0 GA</span>
+            Production-ready agent task broker
+            <span class="arrow">→</span>
+        </a>
+        <h1>Production-Grade<br><span class="grad">Agent Task Broker</span></h1>
         <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no budget overruns, no policy bypass, full traceability.</p>
         <div class="hero-actions">
             <a href="/docs/quickstart.html" class="btn btn-primary">Get Started in 5 Minutes →</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+        </div>
+        <div class="hero-meta">
+            <span>PostgreSQL + NATS dual-write</span>
+            <span>OpenTelemetry tracing</span>
+            <span>A2A / MCP / SDK</span>
         </div>
     </div>
 </section>
 
 <section class="problems">
     <div class="container">
-        <h2>Agent Collaboration Breaks in Production</h2>
+        <div class="section-head">
+            <span class="eyebrow">The Problem</span>
+            <h2>Agent Collaboration Breaks in Production</h2>
+            <p class="section-sub">When agents hand off work directly, every failure mode below becomes an outage. Janus sits in the middle and removes them.</p>
+        </div>
         <div class="problem-grid">
             <div class="problem-card">
                 <div class="problem-icon">📭</div>
@@ -83,10 +110,14 @@
 
 <section class="features">
     <div class="container">
-        <h2>Core Capabilities</h2>
+        <div class="section-head">
+            <span class="eyebrow">Capabilities</span>
+            <h2>Core Capabilities</h2>
+            <p class="section-sub">Six pillars that turn fragile agent-to-agent calls into a governed, observable, production-grade mesh.</p>
+        </div>
         <div class="feature-grid">
             <div class="feature">
-                <h3>🔄 Durable Delivery</h3>
+                <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
                     <li>Dual-write persistence: PostgreSQL + NATS</li>
                     <li>Automatic recovery after agent crashes</li>
@@ -95,7 +126,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>⚖️ Governance</h3>
+                <h3><span class="fi">⚖️</span> Governance</h3>
                 <ul>
                     <li>Policy engine: who can call whom, with what data</li>
                     <li>Budget: RPM / TPM / concurrency / daily cost</li>
@@ -104,7 +135,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🧭 Capability Routing</h3>
+                <h3><span class="fi">🧭</span> Capability Routing</h3>
                 <ul>
                     <li>Match agents by capability, not hard-coded target</li>
                     <li>Hard constraints: online / policy / capacity / budget</li>
@@ -113,7 +144,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🔌 Multi-Protocol</h3>
+                <h3><span class="fi">🔌</span> Multi-Protocol</h3>
                 <ul>
                     <li>HTTP REST API + gRPC</li>
                     <li>A2A Gateway (Agent Card / Task Send)</li>
@@ -122,7 +153,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>📊 Observability</h3>
+                <h3><span class="fi">📊</span> Observability</h3>
                 <ul>
                     <li>Prometheus metrics (16+ core metrics)</li>
                     <li>OpenTelemetry distributed tracing</li>
@@ -131,7 +162,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🛡️ Security</h3>
+                <h3><span class="fi">🛡️</span> Security</h3>
                 <ul>
                     <li>Tenant isolation (data / messages / files)</li>
                     <li>API Key auth + mTLS</li>
@@ -143,41 +174,54 @@
     </div>
 </section>
 
-<section class="quickstart-preview">
+<section class="section-code">
     <div class="container">
-        <h2>Running in 5 Minutes</h2>
+        <div class="section-head">
+            <span class="eyebrow">Quick Start</span>
+            <h2>Running in 5 Minutes</h2>
+            <p class="section-sub">One command to start the broker, a few lines of SDK to publish and complete your first durable task.</p>
+        </div>
         <div class="code-blocks">
-            <div class="code-block">
-                <div class="code-label">1. Start Janus</div>
-<pre><code>docker compose up -d</code></pre>
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">1. Start Janus</span>
+                </div>
+<pre><code><span class="tok-d">$ </span><span class="tok-f">docker</span> <span class="tok-d">compose</span> <span class="tok-k">up</span> <span class="tok-o">-d</span></code></pre>
             </div>
-            <div class="code-block">
-                <div class="code-label">2. Publish a task (Python SDK)</div>
-<pre><code>from janus_sdk import JanusClient
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">2. Publish a task (Python SDK)</span>
+                </div>
+<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_sdk</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span>
 
-client = JanusClient("http://localhost:8080", tenant_id="acme")
-client.publish_task({
-    "id": "task-001",
-    "source_agent": "product",
-    "target_type": "mailbox",
-    "target_value": "review-mb",
-    "envelope": { ... }
+<span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span>(<span class="tok-s">"http://localhost:8080"</span>, <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span>)
+<span class="tok-d">client</span>.<span class="tok-f">publish_task</span>({
+    <span class="tok-s">"id"</span>: <span class="tok-s">"task-001"</span>,
+    <span class="tok-s">"source_agent"</span>: <span class="tok-s">"product"</span>,
+    <span class="tok-s">"target_type"</span>: <span class="tok-s">"mailbox"</span>,
+    <span class="tok-s">"target_value"</span>: <span class="tok-s">"review-mb"</span>,
+    <span class="tok-s">"envelope"</span>: { ... }
 })</code></pre>
             </div>
-            <div class="code-block">
-                <div class="code-label">3. Agent pulls and completes</div>
-<pre><code>result = client.pull_task("review-mb", "reviewer")
-client.start_task(result.task.id, result.lease.lease_id)
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">3. Agent pulls and completes</span>
+                </div>
+<pre><code><span class="tok-d">result</span> <span class="tok-o">=</span> <span class="tok-d">client</span>.<span class="tok-f">pull_task</span>(<span class="tok-s">"review-mb"</span>, <span class="tok-s">"reviewer"</span>)
+<span class="tok-d">client</span>.<span class="tok-f">start_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>)
 
-# Process task...
+<span class="tok-c"># Process task...</span>
 
-client.ack_task(result.task.id, {
-    "lease_id": result.lease.lease_id,
-    "result_ref": "s3://result.json"
+<span class="tok-d">client</span>.<span class="tok-f">ack_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, {
+    <span class="tok-s">"lease_id"</span>: <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>,
+    <span class="tok-s">"result_ref"</span>: <span class="tok-s">"s3://result.json"</span>
 })</code></pre>
             </div>
         </div>
-        <div style="text-align:center; margin-top:2rem;">
+        <div style="text-align:center; margin-top:2.5rem;">
             <a href="/docs/quickstart.html" class="btn btn-primary">Full Tutorial →</a>
         </div>
     </div>
@@ -185,21 +229,25 @@ client.ack_task(result.task.id, {
 
 <section class="scenarios">
     <div class="container">
-        <h2>Use Cases</h2>
+        <div class="section-head">
+            <span class="eyebrow">Use Cases</span>
+            <h2>Built for Real Agent Workflows</h2>
+            <p class="section-sub">Any pipeline that chains agents becomes reliable the moment it runs through Janus mailboxes.</p>
+        </div>
         <div class="scenario-flow">
             <div class="scenario">
                 <h3>📝 Code Review</h3>
-                <p>Product → Review → Code → Test → Deploy</p>
+                <p class="chain">Product → Review → Code → Test → Deploy</p>
                 <p class="scenario-detail">PR triggers review agent, code agent fixes issues, test agent validates, deploy agent ships</p>
             </div>
             <div class="scenario">
                 <h3>🔧 CI Auto-Fix</h3>
-                <p>Failure → Diagnose → Fix → Verify → Merge</p>
+                <p class="chain">Failure → Diagnose → Fix → Verify → Merge</p>
                 <p class="scenario-detail">CI failure auto-dispatches to diagnosis agent, generates fix, validates and merges</p>
             </div>
             <div class="scenario">
                 <h3>🔒 Security Scan</h3>
-                <p>Commit → Dependency Scan → Credential Check → Approve</p>
+                <p class="chain">Commit → Dependency Scan → Credential Check → Approve</p>
                 <p class="scenario-detail">Auto-scan for vulnerabilities and leaked credentials, high-risk changes require approval</p>
             </div>
         </div>
@@ -208,10 +256,35 @@ client.ack_task(result.task.id, {
 
 <section class="ecosystem">
     <div class="container">
-        <h2>Framework Compatibility</h2>
-        <p class="ecosystem-subtitle">LangGraph · AutoGen · CrewAI · GitHub Actions · Claude Code · Custom Agents · Human Approval Nodes</p>
-        <div style="text-align:center; margin-top:2rem;">
+        <div class="section-head">
+            <span class="eyebrow">Compatibility</span>
+            <h2>Framework Compatibility</h2>
+            <p class="ecosystem-subtitle">Bring your existing stack — Janus bridges them all through one durable backbone.</p>
+        </div>
+        <div class="eco-pills">
+            <span class="eco-pill">LangGraph</span>
+            <span class="eco-pill">AutoGen</span>
+            <span class="eco-pill">CrewAI</span>
+            <span class="eco-pill">GitHub Actions</span>
+            <span class="eco-pill">Claude Code</span>
+            <span class="eco-pill">Custom Agents</span>
+            <span class="eco-pill">Human Approval Nodes</span>
+        </div>
+        <div style="text-align:center; margin-top:2.5rem;">
             <a href="/scenarios/code-review.html" class="btn btn-secondary">View Integration Examples →</a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="container">
+        <div class="cta-card">
+            <h2>Ship agent collaboration<br><span style="background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">that survives production.</span></h2>
+            <p>Reliable, governed, auditable, and recoverable — from the first task to the millionth.</p>
+            <div class="hero-actions">
+                <a href="/docs/quickstart.html" class="btn btn-primary">Get Started →</a>
+                <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">Star on GitHub ↗</a>
+            </div>
         </div>
     </div>
 </section>
@@ -220,7 +293,7 @@ client.ack_task(result.task.id, {
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="assets/logo.svg" alt="Janus" height="24">
+                <img src="assets/logo.svg" alt="Janus" height="26">
                 <span>Janus</span>
             </div>
             <div class="footer-links">

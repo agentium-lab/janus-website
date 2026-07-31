@@ -10,12 +10,24 @@
     <meta http-equiv="content-language" content="zh-CN">
 </head>
 <body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+    <span class="bg-noise"></span>
+</div>
+
 <nav class="navbar">
     <div class="nav-container">
         <a href="/zh/" class="nav-logo">
-            <img src="../assets/logo.svg" alt="Janus" height="28">
+            <img src="../assets/logo.svg" alt="Janus" height="30">
             <span>Janus</span>
         </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
         <div class="nav-links">
             <a href="/zh/docs/quickstart.html">快速开始</a>
             <a href="/zh/docs/concepts.html">核心概念</a>
@@ -28,19 +40,34 @@
 </nav>
 
 <section class="hero">
+    <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
-        <h1>让 Agent 协作<br>进入生产环境</h1>
+        <a href="/zh/docs/quickstart.html" class="hero-badge">
+            <span class="tag">v1.0 GA</span>
+            生产级 Agent 任务代理
+            <span class="arrow">→</span>
+        </a>
+        <h1>让 Agent 协作<br><span class="grad">进入生产环境</span></h1>
         <p class="hero-subtitle">不同框架的 Agent 之间，可靠地交接任务。<br>不丢任务，不超预算，不越权，全链可追踪。</p>
         <div class="hero-actions">
             <a href="/zh/docs/quickstart.html" class="btn btn-primary">5 分钟快速开始 →</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+        </div>
+        <div class="hero-meta">
+            <span>PostgreSQL + NATS 双写持久化</span>
+            <span>OpenTelemetry 链路追踪</span>
+            <span>A2A / MCP / SDK</span>
         </div>
     </div>
 </section>
 
 <section class="problems">
     <div class="container">
-        <h2>生产环境中的 Agent 协作痛点</h2>
+        <div class="section-head">
+            <span class="eyebrow">痛点</span>
+            <h2>生产环境中的 Agent 协作痛点</h2>
+            <p class="section-sub">当 Agent 之间直接交接任务，下列每一种故障都会变成线上事故。Janus 居中调度，逐一消除。</p>
+        </div>
         <div class="problem-grid">
             <div class="problem-card">
                 <div class="problem-icon">📭</div>
@@ -84,10 +111,14 @@
 
 <section class="features">
     <div class="container">
-        <h2>核心能力</h2>
+        <div class="section-head">
+            <span class="eyebrow">核心能力</span>
+            <h2>核心能力</h2>
+            <p class="section-sub">六大支柱，把脆弱的 Agent 直连，变成可控、可观测的生产级网络。</p>
+        </div>
         <div class="feature-grid">
             <div class="feature">
-                <h3>🔄 持久投递</h3>
+                <h3><span class="fi">🔄</span> 持久投递</h3>
                 <ul>
                     <li>任务在 PostgreSQL + NATS 双写持久化</li>
                     <li>Agent 崩溃后自动恢复，任务不丢失</li>
@@ -96,7 +127,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>⚖️ 治理控制</h3>
+                <h3><span class="fi">⚖️</span> 治理控制</h3>
                 <ul>
                     <li>策略引擎：谁能调用谁，能传什么数据</li>
                     <li>预算控制：RPM / TPM / 并发 / 日费用</li>
@@ -105,7 +136,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🧭 能力路由</h3>
+                <h3><span class="fi">🧭</span> 能力路由</h3>
                 <ul>
                     <li>按能力匹配 Agent，不是写死目标</li>
                     <li>硬约束：在线 / 权限 / 容量 / 预算</li>
@@ -114,7 +145,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🔌 多协议接入</h3>
+                <h3><span class="fi">🔌</span> 多协议接入</h3>
                 <ul>
                     <li>HTTP REST API + gRPC</li>
                     <li>A2A Gateway（Agent Card / Task Send）</li>
@@ -123,7 +154,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>📊 可观测性</h3>
+                <h3><span class="fi">📊</span> 可观测性</h3>
                 <ul>
                     <li>Prometheus 指标（16+ 核心指标）</li>
                     <li>OpenTelemetry 链路追踪</li>
@@ -132,7 +163,7 @@
                 </ul>
             </div>
             <div class="feature">
-                <h3>🛡️ 安全隔离</h3>
+                <h3><span class="fi">🛡️</span> 安全隔离</h3>
                 <ul>
                     <li>租户隔离（数据 / 消息 / 文件）</li>
                     <li>API Key 认证 + mTLS</li>
@@ -144,41 +175,54 @@
     </div>
 </section>
 
-<section class="quickstart-preview">
+<section class="section-code">
     <div class="container">
-        <h2>5 分钟跑通</h2>
+        <div class="section-head">
+            <span class="eyebrow">快速开始</span>
+            <h2>5 分钟跑通</h2>
+            <p class="section-sub">一条命令启动代理，几行 SDK 即可发布并完成你的第一个持久化任务。</p>
+        </div>
         <div class="code-blocks">
-            <div class="code-block">
-                <div class="code-label">1. 启动 Janus</div>
-<pre><code>docker compose up -d</code></pre>
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">1. 启动 Janus</span>
+                </div>
+<pre><code><span class="tok-d">$ </span><span class="tok-f">docker</span> <span class="tok-d">compose</span> <span class="tok-k">up</span> <span class="tok-o">-d</span></code></pre>
             </div>
-            <div class="code-block">
-                <div class="code-label">2. Python SDK 发任务</div>
-<pre><code>from janus_sdk import JanusClient
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">2. Python SDK 发任务</span>
+                </div>
+<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_sdk</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span>
 
-client = JanusClient("http://localhost:8080", tenant_id="acme")
-client.publish_task({
-    "id": "task-001",
-    "source_agent": "product",
-    "target_type": "mailbox",
-    "target_value": "review-mb",
-    "envelope": { ... }
+<span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span>(<span class="tok-s">"http://localhost:8080"</span>, <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span>)
+<span class="tok-d">client</span>.<span class="tok-f">publish_task</span>({
+    <span class="tok-s">"id"</span>: <span class="tok-s">"task-001"</span>,
+    <span class="tok-s">"source_agent"</span>: <span class="tok-s">"product"</span>,
+    <span class="tok-s">"target_type"</span>: <span class="tok-s">"mailbox"</span>,
+    <span class="tok-s">"target_value"</span>: <span class="tok-s">"review-mb"</span>,
+    <span class="tok-s">"envelope"</span>: { ... }
 })</code></pre>
             </div>
-            <div class="code-block">
-                <div class="code-label">3. Agent 拉取并完成</div>
-<pre><code>result = client.pull_task("review-mb", "reviewer")
-client.start_task(result.task.id, result.lease.lease_id)
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">3. Agent 拉取并完成</span>
+                </div>
+<pre><code><span class="tok-d">result</span> <span class="tok-o">=</span> <span class="tok-d">client</span>.<span class="tok-f">pull_task</span>(<span class="tok-s">"review-mb"</span>, <span class="tok-s">"reviewer"</span>)
+<span class="tok-d">client</span>.<span class="tok-f">start_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>)
 
-# 处理任务...
+<span class="tok-c"># 处理任务...</span>
 
-client.ack_task(result.task.id, {
-    "lease_id": result.lease.lease_id,
-    "result_ref": "s3://result.json"
+<span class="tok-d">client</span>.<span class="tok-f">ack_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, {
+    <span class="tok-s">"lease_id"</span>: <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>,
+    <span class="tok-s">"result_ref"</span>: <span class="tok-s">"s3://result.json"</span>
 })</code></pre>
             </div>
         </div>
-        <div style="text-align:center; margin-top:2rem;">
+        <div style="text-align:center; margin-top:2.5rem;">
             <a href="/zh/docs/quickstart.html" class="btn btn-primary">完整教程 →</a>
         </div>
     </div>
@@ -186,21 +230,25 @@ client.ack_task(result.task.id, {
 
 <section class="scenarios">
     <div class="container">
-        <h2>使用场景</h2>
+        <div class="section-head">
+            <span class="eyebrow">使用场景</span>
+            <h2>为真实 Agent 工作流而生</h2>
+            <p class="section-sub">任何串联多个 Agent 的流水线，只要接入 Janus 收件箱，立刻变得可靠。</p>
+        </div>
         <div class="scenario-flow">
             <div class="scenario">
                 <h3>📝 代码审查</h3>
-                <p>产品 → 审查 → 编码 → 测试 → 发布</p>
+                <p class="chain">产品 → 审查 → 编码 → 测试 → 发布</p>
                 <p class="scenario-detail">PR 提交后自动触发审查 Agent，审查通过后编码 Agent 修改代码，测试 Agent 验证，最后发布</p>
             </div>
             <div class="scenario">
                 <h3>🔧 CI 自动修复</h3>
-                <p>失败检测 → 诊断 → 修复 → 验证 → 合并</p>
+                <p class="chain">失败检测 → 诊断 → 修复 → 验证 → 合并</p>
                 <p class="scenario-detail">CI 失败后自动派发给诊断 Agent，生成修复方案，验证后自动合并</p>
             </div>
             <div class="scenario">
                 <h3>🔒 安全扫描</h3>
-                <p>提交 → 依赖扫描 → 凭据检查 → 审批</p>
+                <p class="chain">提交 → 依赖扫描 → 凭据检查 → 审批</p>
                 <p class="scenario-detail">代码提交后自动扫描依赖漏洞和凭据泄露，高危变更需人工审批</p>
             </div>
         </div>
@@ -209,10 +257,35 @@ client.ack_task(result.task.id, {
 
 <section class="ecosystem">
     <div class="container">
-        <h2>多框架兼容</h2>
-        <p class="ecosystem-subtitle">LangGraph · AutoGen · CrewAI · GitHub Actions · Claude Code · 自定义 Agent · 人工审批节点</p>
-        <div style="text-align:center; margin-top:2rem;">
+        <div class="section-head">
+            <span class="eyebrow">兼容性</span>
+            <h2>多框架兼容</h2>
+            <p class="ecosystem-subtitle">沿用你现有的技术栈 —— Janus 用一条持久化骨干把它们全部打通。</p>
+        </div>
+        <div class="eco-pills">
+            <span class="eco-pill">LangGraph</span>
+            <span class="eco-pill">AutoGen</span>
+            <span class="eco-pill">CrewAI</span>
+            <span class="eco-pill">GitHub Actions</span>
+            <span class="eco-pill">Claude Code</span>
+            <span class="eco-pill">自定义 Agent</span>
+            <span class="eco-pill">人工审批节点</span>
+        </div>
+        <div style="text-align:center; margin-top:2.5rem;">
             <a href="/zh/scenarios/code-review.html" class="btn btn-secondary">查看集成示例 →</a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="container">
+        <div class="cta-card">
+            <h2>让 Agent 协作<br><span style="background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">在生产环境中稳如磐石。</span></h2>
+            <p>可靠、可控、可审计、可恢复 —— 从第一个任务到第一百万个任务。</p>
+            <div class="hero-actions">
+                <a href="/zh/docs/quickstart.html" class="btn btn-primary">立即开始 →</a>
+                <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">在 GitHub 加星 ↗</a>
+            </div>
         </div>
     </div>
 </section>
@@ -221,7 +294,7 @@ client.ack_task(result.task.id, {
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="../assets/logo.svg" alt="Janus" height="24">
+                <img src="../assets/logo.svg" alt="Janus" height="26">
                 <span>Janus</span>
             </div>
             <div class="footer-links">

@@ -7,51 +7,24 @@
     <meta name="description" content="Janus API reference covering REST endpoints, gRPC services, authentication, and error handling.">
     <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
     <link rel="stylesheet" href="/assets/style.css">
-    <style>
-        .doc-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
-        .doc-content h2 { font-size: 28px; margin: 48px 0 16px; text-align: left; }
-        .doc-content h3 { font-size: 22px; margin: 32px 0 12px; }
-        .doc-content p, .doc-content li { color: var(--text-muted); line-height: 1.8; }
-        .doc-content ul, .doc-content ol { padding-left: 24px; margin: 12px 0; }
-        .doc-content li { margin: 6px 0; }
-        .doc-content pre {
-            background: #000; border: 1px solid var(--border); border-radius: 8px;
-            padding: 16px; overflow-x: auto; margin: 16px 0;
-        }
-        .doc-content code {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 14px; color: #a5b4fc;
-        }
-        .doc-content p code, .doc-content li code {
-            background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
-            font-size: 13px; color: #e2e8f0;
-        }
-        .doc-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
-        .doc-content th, .doc-content td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-        .doc-content th { color: var(--text); font-weight: 600; background: var(--bg-card); }
-        .doc-content td { color: var(--text-muted); }
-        .doc-content .endpoint { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
-        .doc-content .endpoint .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; margin-right: 8px; }
-        .doc-content .endpoint .method.get { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-        .doc-content .endpoint .method.post { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-        .doc-content .endpoint .method.put { background: rgba(234, 179, 8, 0.15); color: #eab308; }
-        .doc-content .endpoint .method.delete { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-        .doc-content .endpoint .path { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; }
-        .doc-content .endpoint .desc { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-        .breadcrumb { max-width: 720px; margin: 0 auto; padding: 24px 24px 0; font-size: 14px; color: var(--text-muted); }
-        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
-        .breadcrumb a:hover { color: var(--text); }
-        .breadcrumb span { margin: 0 6px; }
-        .doc-content .note { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: var(--text-muted); }
-    </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+</div>
+
 <nav class="navbar">
     <div class="nav-container">
         <a href="/" class="nav-logo">
-            <img src="/assets/logo.svg" alt="Janus" height="28">
+            <img src="/assets/logo.svg" alt="Janus" height="30">
             <span>Janus</span>
         </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </label>
         <div class="nav-links">
             <a href="/docs/quickstart.html">Quick Start</a>
             <a href="/docs/concepts.html">Concepts</a>
@@ -63,9 +36,13 @@
     </div>
 </nav>
 
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
 <div class="breadcrumb"><a href="/">Home</a><span>›</span>API Reference</div>
 
 <div class="doc-content">
+    <span class="eyebrow">Documentation</span>
     <h1>API Reference</h1>
     <p>Janus exposes HTTP REST and gRPC APIs. All SDKs communicate through these endpoints.</p>
 
@@ -188,14 +165,14 @@
     <pre><code>janus auth create-key --tenant acme --role admin
 janus auth revoke-key --tenant acme --key-id &lt;id&gt;</code></pre>
 
-    <div class="note">The full protobuf service definitions and gRPC reflection are available on the server. See the <a href="https://github.com/agentium-lab/Janus" style="color:#818cf8;">GitHub repo</a> for proto files.</div>
+    <div class="note">The full protobuf service definitions and gRPC reflection are available on the server. See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for proto files.</div>
 </div>
 
 <footer class="footer">
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="/assets/logo.svg" alt="Janus" height="24">
+                <img src="/assets/logo.svg" alt="Janus" height="26">
                 <span>Janus</span>
             </div>
             <div class="footer-links">
