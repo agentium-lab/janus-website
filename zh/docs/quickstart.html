@@ -20,7 +20,7 @@
 <nav class="navbar">
     <div class="nav-container">
         <a href="/zh/" class="nav-logo">
-            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="42">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
         <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
@@ -43,6 +43,7 @@
 <div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
 
 <div class="doc-content">
+    <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
     <span class="eyebrow">文档</span>
     <h1>快速开始</h1>
     <p>安装、配置并运行 Janus，然后完成你的第一个 Agent 到 Agent 任务交接。</p>
@@ -148,6 +149,63 @@
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector 地址</span></code></pre>
 
+    <h3>项目配置（声明式）</h3>
+    <p>第二个 YAML 文件 —— <strong>项目配置</strong> —— 让你以代码形式声明 Agent、邮箱、预算与治理策略，再通过 CLI 应用。它与上面的服务端配置不同（后者只管连接与运行时）。从参考文件复制起步：</p>
+    <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># 应用前预览变更</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d"> </span><span class="tok-n">--file</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># 应用（幂等 —— 可安全重复执行）</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-n">--file</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span></code></pre>
+    <p>项目文件声明完整的租户拓扑 —— Agent 及其能力、租户级与团队级预算、allow/deny/approve 策略：</p>
+    <pre><code><span class="tok-d">version</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">v1</span>
+<span class="tok-d">default_tenant</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-d">defaults</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">protocol</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">300</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_deliver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">policy</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">priority</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">100</span>
+
+<span class="tok-d">tenants</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Acme</span><span class="tok-d"> </span><span class="tok-d">Engineering</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">agents</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">code-review</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">capabilities</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">-</span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">data_classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[</span><span class="tok-d">public</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">internal</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">confidential</span><span class="tok-d">]</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">4</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">budgets</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tenant</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">2000000</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 每分钟 token 数</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">500</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 每日成本上限</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">teams</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">engineering</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">20</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">600000</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">policies</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">approve</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[</span><span class="tok-d">prod_deploy</span><span class="tok-d">]</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 需要人工审批</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">allow</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">-</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code-review</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">deny</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">-</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">intern-agent</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tool</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy</span><span class="tok-o">.</span><span class="tok-d">prod</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">data_classification</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">deny</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">-</span><span class="tok-d"> </span><span class="tok-d">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">interns</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[</span><span class="tok-d">confidential</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">restricted</span><span class="tok-d">]</span></code></pre>
+    <p>通过 <code>JANUS_PROJECT_FILE</code> 让服务端加载项目文件，或保持独立、在 CI/CD 流水线里用 CLI 应用。完整 schema 见仓库中的 <code>configs/janus.project.example.yaml</code>。</p>
+
     <h2>4. 从源码构建（可选）</h2>
     <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
     <pre><code><span class="tok-c"># 启动三个依赖服务</span>
@@ -239,7 +297,7 @@
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="36">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="48">
             </div>
             <div class="footer-links">
                 <div class="footer-col">
