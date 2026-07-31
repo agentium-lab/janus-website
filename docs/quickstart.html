@@ -390,6 +390,40 @@
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">register</span><span class="tok-d"> </span><span class="tok-n">--id</span><span class="tok-d"> </span><span class="tok-d">adhoc-worker</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-s">&quot;Adhoc Worker&quot;</span><span class="tok-d"> </span><span class="tok-n">--protocol</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span></code></pre>
 
 
+    <h3 id="config-auth">Authentication</h3>
+    <p>Every API call to Janus is authenticated with a <strong>tenant-scoped API key</strong> (enabled by default). Optionally, <strong>mTLS</strong> can be layered on for stricter machine-to-machine deployments.</p>
+
+    <h4>API Keys</h4>
+    <p>With <code>auth.enabled</code> on (the default), every request must present a valid key via the <code>X-API-Key</code> or <code>Authorization: Bearer &lt;key&gt;</code> header. Keys are bound to one tenant — a key issued for tenant A cannot reach tenant B (the server rejects the call with <code>403</code>).</p>
+    <p>Create a key with the CLI. The raw key — <code>janus_&lt;64 hex chars&gt;</code> — is returned <strong>only once</strong>, so store it immediately:</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
+<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  (store the key — shown only once)</span></code></pre>
+    <p>The server keeps only a SHA-256 hash of the key plus its 8-character prefix for lookup, so the raw key can never be recovered. List and revoke keys the same way:</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
+    <p>Point the CLI or SDK at a key with <code>--api-key</code> or the <code>JANUS_API_KEY</code> environment variable, and pass it on plain HTTP calls as a header:</p>
+    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-d">janus_a1b2c3d4e5…</span>
+<span class="tok-d">curl</span><span class="tok-d"> </span><span class="tok-n">-H</span><span class="tok-d"> </span><span class="tok-s">&quot;Authorization: Bearer $JANUS_API_KEY&quot;</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-n">8080</span><span class="tok-o">/</span><span class="tok-d">v1</span><span class="tok-o">/</span><span class="tok-d">tenants</span><span class="tok-o">/</span><span class="tok-d">acme</span><span class="tok-o">/</span><span class="tok-d">tasks</span></code></pre>
+
+    <h4>mTLS (optional)</h4>
+    <p>For stricter machine-to-machine security, enable TLS and require client certificates. When <code>client_ca_file</code> is set, Janus verifies client certificates (mutual TLS, minimum TLS 1.2):</p>
+    <pre><code><span class="tok-c"># configs/janus.local.yaml</span>
+<span class="tok-p">auth</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
+
+<span class="tok-p">tls</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
+<span class="tok-d">  </span><span class="tok-p">cert_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.crt</span>
+<span class="tok-d">  </span><span class="tok-p">key_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.key</span>
+<span class="tok-d">  </span><span class="tok-p">client_ca_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/ca.crt</span><span class="tok-c">   # set to require client certificates (mTLS)</span></code></pre>
+    <p>Or with environment variables (all <code>JANUS_</code>-prefixed):</p>
+    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CERT_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.crt</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_KEY_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.key</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
+    <p>Keep <code>auth.enabled</code> on in production — when disabled, every API endpoint is unauthenticated.</p>
+
     <h2 id="build-from-source">4. Build from Source (optional)</h2>
     <p>To run Janus outside Docker (development, custom builds, debugging):</p>
     <pre><code><span class="tok-c"># Start the three dependencies</span>
@@ -503,14 +537,13 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># pull live resources back into the file</span></code></pre>
 
     <h3 id="cli-api-keys">API Keys</h3>
-    <p>API keys are tenant-scoped. Create one per environment or service and revoke them when rotated:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-c"># → jak_live_a1b2c3d4...  (store this — shown only once)</span>
+    <p>API keys are tenant-scoped. Create one per environment or service and revoke them when rotated. The raw key is shown only once:</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
+<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  (store the key — shown only once)</span>
 
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-c"># → jak_live_a1b2...  admin  created 2026-07-31</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
 
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-d">jak_live_a1b2</span></code></pre>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
 
     <h3 id="cli-tasks-mailboxes">Tasks &amp; Mailboxes</h3>
     <p>Publish, pull, and acknowledge tasks — the same lifecycle the SDK wraps, but from the shell:</p>

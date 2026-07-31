@@ -391,6 +391,40 @@
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">register</span><span class="tok-d"> </span><span class="tok-n">--id</span><span class="tok-d"> </span><span class="tok-d">adhoc-worker</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-s">&quot;Adhoc Worker&quot;</span><span class="tok-d"> </span><span class="tok-n">--protocol</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span></code></pre>
 
 
+    <h3 id="config-auth">鉴权</h3>
+    <p>Janus 对每一次 API 调用都使用<strong>按租户作用域的 API 密钥</strong>鉴权（默认开启）。可选地，可叠加 <strong>mTLS</strong> 用于更严格的机器到机器（M2M）部署。</p>
+
+    <h4>API 密钥</h4>
+    <p>当 <code>auth.enabled</code> 开启（默认）时，每个请求都必须通过 <code>X-API-Key</code> 或 <code>Authorization: Bearer &lt;key&gt;</code> 请求头携带有效密钥。密钥绑定单一租户 —— 为租户 A 签发的密钥无法访问租户 B（服务端以 <code>403</code> 拒绝该调用）。</p>
+    <p>用 CLI 创建密钥。原始密钥 —— <code>janus_&lt;64 位十六进制&gt;</code> —— <strong>只显示一次</strong>，请立即保存：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
+<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  （请保存 —— 只显示一次）</span></code></pre>
+    <p>服务端只保存密钥的 SHA-256 哈希以及用于查询的 8 位前缀，因此原始密钥永远无法被找回。用同样的方式列出与撤销密钥：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
+    <p>用 <code>--api-key</code> 或 <code>JANUS_API_KEY</code> 环境变量将密钥交给 CLI 或 SDK；直接发 HTTP 请求时以请求头携带：</p>
+    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-d">janus_a1b2c3d4e5…</span>
+<span class="tok-d">curl</span><span class="tok-d"> </span><span class="tok-n">-H</span><span class="tok-d"> </span><span class="tok-s">&quot;Authorization: Bearer $JANUS_API_KEY&quot;</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-n">8080</span><span class="tok-o">/</span><span class="tok-d">v1</span><span class="tok-o">/</span><span class="tok-d">tenants</span><span class="tok-o">/</span><span class="tok-d">acme</span><span class="tok-o">/</span><span class="tok-d">tasks</span></code></pre>
+
+    <h4>mTLS（可选）</h4>
+    <p>对于更严格的机器到机器安全，可启用 TLS 并要求客户端证书。当设置了 <code>client_ca_file</code> 时，Janus 会校验客户端证书（双向 TLS，最低 TLS 1.2）：</p>
+    <pre><code><span class="tok-c"># configs/janus.local.yaml</span>
+<span class="tok-p">auth</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
+
+<span class="tok-p">tls</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
+<span class="tok-d">  </span><span class="tok-p">cert_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.crt</span>
+<span class="tok-d">  </span><span class="tok-p">key_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.key</span>
+<span class="tok-d">  </span><span class="tok-p">client_ca_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/ca.crt</span><span class="tok-c">   # 设置后要求客户端证书（mTLS）</span></code></pre>
+    <p>或使用环境变量（均以 <code>JANUS_</code> 开头）：</p>
+    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CERT_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.crt</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_KEY_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.key</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
+    <p>生产环境请保持 <code>auth.enabled</code> 开启 —— 关闭后所有 API 端点都不再鉴权。</p>
+
     <h2 id="build-from-source">4. 从源码构建（可选）</h2>
     <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
     <pre><code><span class="tok-c"># 启动三个依赖服务</span>
@@ -504,14 +538,13 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># 将线上资源拉回文件</span></code></pre>
 
     <h3 id="cli-api-keys">API 密钥</h3>
-    <p>API 密钥按租户作用域划分。每个环境或服务创建一把，轮换时撤销旧密钥：</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-c"># → jak_live_a1b2c3d4...  （请保存 —— 只显示一次）</span>
+    <p>API 密钥按租户作用域划分。每个环境或服务创建一把，轮换时撤销旧密钥。原始密钥只显示一次：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
+<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  （请保存 —— 只显示一次）</span>
 
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-c"># → jak_live_a1b2...  admin  created 2026-07-31</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
 
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-d">jak_live_a1b2</span></code></pre>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
 
     <h3 id="cli-tasks-mailboxes">任务与邮箱</h3>
     <p>发布、拉取并确认任务 —— 与 SDK 封装的同一套生命周期，只是从命令行操作：</p>

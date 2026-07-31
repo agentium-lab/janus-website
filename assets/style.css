@@ -867,6 +867,25 @@ pre code {
   letter-spacing: -0.02em;
   margin: 30px 0 12px;
 }
+.doc-content h4 {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--primary-2);
+  margin: 22px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.doc-content h4::before {
+  content: '';
+  width: 16px;
+  height: 2px;
+  flex: none;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--violet));
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.7);
+}
 .doc-content p { color: var(--text-muted); line-height: 1.8; }
 .doc-content p strong { color: var(--text); }
 .doc-content ul, .doc-content ol { padding-left: 22px; margin: 14px 0; }
