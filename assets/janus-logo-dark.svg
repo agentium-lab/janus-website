@@ -1,7 +1,6 @@
-<svg width="760" height="220" viewBox="0 0 760 220" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<svg width="520" height="220" viewBox="0 0 520 220" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Janus logo on dark background</title>
   <desc id="desc">Janus gradient wordmark with two rounded Agent portals connected through a governed routing node on a dark background.</desc>
-  <rect width="760" height="220" fill="#08111F"/>
   <defs>
     <linearGradient id="janusLogoDarkOuter" x1="20" y1="31" x2="240" y2="151" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FB7185"/>
