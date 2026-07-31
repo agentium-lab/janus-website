@@ -1232,6 +1232,100 @@ pre code {
   line-height: 1.6;
 }
 
+/* ---------- system architecture diagram ---------- */
+.sys-arch {
+  margin: 32px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sys-tier {
+  position: relative;
+  padding: 18px 20px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.sys-tier::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+}
+.sys-tier.t-ext::before { background: linear-gradient(180deg, var(--primary), var(--primary-2)); }
+.sys-tier.t-in::before { background: #22d3ee; }
+.sys-tier.t-core::before { background: #818cf8; }
+.sys-tier.t-infra::before { background: #34d399; }
+.sys-tier-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.sys-tier-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.sys-tier-sub {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.sys-tier-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sys-node {
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.sys-node:hover {
+  border-color: var(--border-3);
+  transform: translateY(-1px);
+}
+.sys-group { width: 100%; margin-top: 12px; }
+.sys-group:first-child { margin-top: 0; }
+.sys-group-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 7px;
+  padding-left: 2px;
+}
+.sys-flow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 30px;
+  position: relative;
+}
+.sys-flow::before {
+  content: '';
+  width: 1.5px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--border-2), var(--border-3), var(--border-2));
+}
+.sys-flow::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--border-3);
+}
+
 @media (min-width: 981px) and (max-width: 1240px) {
   .doc-toc { margin-left: -28px; }
 }

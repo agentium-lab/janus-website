@@ -77,6 +77,89 @@
         </div>
     </div>
 
+    <h2>架构总览</h2>
+    <p>Janus 分为四层。外部客户端通过协议网关接入；无状态的核心服务负责任务生命周期、治理与后台 Worker；所有持久状态都外部化。每一层都可以独立扩展。</p>
+
+    <figure class="sys-arch">
+        <div class="sys-tier t-ext">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">外部客户端</span>
+                <span class="sys-tier-sub">与 Janus 通信的 Agent 与工具</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">A2A Agents</span>
+                <span class="sys-node">ACP Agents</span>
+                <span class="sys-node">SDK Agents</span>
+                <span class="sys-node">MCP Servers</span>
+                <span class="sys-node">Dashboard UI</span>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-in">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">接入层</span>
+                <span class="sys-tier-sub">协议适配与认证</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">协议网关</span>
+                <span class="sys-node">HTTP / gRPC API</span>
+                <span class="sys-node">WebSocket 网关</span>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-core">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">核心服务</span>
+                <span class="sys-tier-sub">无状态、可水平扩展</span>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">数据面 — 任务流转</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Task</span>
+                    <span class="sys-node">Mailbox</span>
+                    <span class="sys-node">Dispatch</span>
+                    <span class="sys-node">Lease</span>
+                </div>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">控制面 — 治理</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Policy</span>
+                    <span class="sys-node">Budget</span>
+                    <span class="sys-node">Approval</span>
+                    <span class="sys-node">Audit</span>
+                </div>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">后台 Worker</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Outbox Publisher</span>
+                    <span class="sys-node">Event Projector</span>
+                    <span class="sys-node">Lease Scanner</span>
+                    <span class="sys-node">Heartbeat Sweep</span>
+                </div>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-infra">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">基础设施</span>
+                <span class="sys-tier-sub">外部化状态、高可用</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">PostgreSQL</span>
+                <span class="sys-node">NATS JetStream</span>
+                <span class="sys-node">Redis</span>
+                <span class="sys-node">Artifact Store</span>
+            </div>
+        </div>
+        <figcaption class="arch-caption">接入层只做协议适配。核心服务拥有状态机与治理。PostgreSQL 是事实来源；NATS 承载投递与事件；Redis 只保存心跳与速率计数。</figcaption>
+    </figure>
+
+    <p><strong>接入层</strong>只做协议适配和认证 —— 不持有任何业务逻辑。<strong>核心服务</strong>拥有任务状态机、策略执行、预算核算和审计；它们无状态、可水平扩展。<strong>后台 Worker</strong>（Outbox 发布器、事件投影、租约扫描、心跳清扫）独立运行，通过数据库租约和幂等键协调，多个副本并行也不会重复投递。</p>
+    <p><strong>PostgreSQL</strong> 是任务状态、事务性 outbox、预算和审计投影的事实来源。<strong>NATS JetStream</strong> 通过持久化流和按邮箱的消费者承载任务投递与领域事件。<strong>Redis</strong> 只保存 Agent 心跳和短窗口速率计数 —— 不存任何持久事实。</p>
+    <div class="note">业务服务从不直接写邮箱。任务入队总是经过事务性 outbox，因此 <code>accepted</code> 与 <code>queued</code> 之间发生崩溃也绝不会丢失任务。</div>
+
     <h2>任务（Task）</h2>
     <p>工作的基本单位。任务携带一个不透明载荷（<strong>信封 envelope</strong>），从源 Agent 发往目标消费者。每个任务都有唯一 ID、租户作用域，以及完整的生命周期状态：</p>
     <pre><code><span class="tok-d">pending</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">claimed</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">in_progress</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">completed</span>

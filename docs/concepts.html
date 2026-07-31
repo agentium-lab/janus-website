@@ -76,6 +76,89 @@
         </div>
     </div>
 
+    <h2>Architecture Overview</h2>
+    <p>Janus is layered into four planes. External clients enter through protocol gateways; stateless core services own the task lifecycle, governance, and background workers; all durable state is externalized. Every layer scales independently.</p>
+
+    <figure class="sys-arch">
+        <div class="sys-tier t-ext">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">External Clients</span>
+                <span class="sys-tier-sub">agents &amp; tooling that talk to Janus</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">A2A Agents</span>
+                <span class="sys-node">ACP Agents</span>
+                <span class="sys-node">SDK Agents</span>
+                <span class="sys-node">MCP Servers</span>
+                <span class="sys-node">Dashboard UI</span>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-in">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">Ingress Plane</span>
+                <span class="sys-tier-sub">protocol adaptation &amp; authentication</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">Protocol Gateways</span>
+                <span class="sys-node">HTTP / gRPC API</span>
+                <span class="sys-node">WebSocket Gateway</span>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-core">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">Core Services</span>
+                <span class="sys-tier-sub">stateless, horizontally replicated</span>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">Data Plane — task flow</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Task</span>
+                    <span class="sys-node">Mailbox</span>
+                    <span class="sys-node">Dispatch</span>
+                    <span class="sys-node">Lease</span>
+                </div>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">Control Plane — governance</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Policy</span>
+                    <span class="sys-node">Budget</span>
+                    <span class="sys-node">Approval</span>
+                    <span class="sys-node">Audit</span>
+                </div>
+            </div>
+            <div class="sys-group">
+                <div class="sys-group-label">Background Workers</div>
+                <div class="sys-tier-body">
+                    <span class="sys-node">Outbox Publisher</span>
+                    <span class="sys-node">Event Projector</span>
+                    <span class="sys-node">Lease Scanner</span>
+                    <span class="sys-node">Heartbeat Sweep</span>
+                </div>
+            </div>
+        </div>
+        <div class="sys-flow"></div>
+        <div class="sys-tier t-infra">
+            <div class="sys-tier-head">
+                <span class="sys-tier-title">Infrastructure</span>
+                <span class="sys-tier-sub">externalized state, highly available</span>
+            </div>
+            <div class="sys-tier-body">
+                <span class="sys-node">PostgreSQL</span>
+                <span class="sys-node">NATS JetStream</span>
+                <span class="sys-node">Redis</span>
+                <span class="sys-node">Artifact Store</span>
+            </div>
+        </div>
+        <figcaption class="arch-caption">The ingress plane only adapts protocols. Core services own state machines and governance. PostgreSQL is the source of truth; NATS carries deliveries and events; Redis holds only heartbeats and rate counters.</figcaption>
+    </figure>
+
+    <p>The <strong>ingress plane</strong> does only protocol adaptation and authentication — it holds no business logic. The <strong>core services</strong> own the task state machine, policy enforcement, budget accounting, and audit; they are stateless and scale horizontally. <strong>Background workers</strong> (outbox publisher, event projector, lease scanner, heartbeat sweep) run independently and coordinate through database leases and idempotency keys, so multiple replicas never double-deliver.</p>
+    <p><strong>PostgreSQL</strong> is the source of truth for task state, the transactional outbox, budgets, and audit projections. <strong>NATS JetStream</strong> carries task deliveries and domain events through durable streams and per-mailbox consumers. <strong>Redis</strong> holds only agent heartbeats and short-window rate counters — never durable facts.</p>
+    <div class="note">Business services never write to the mailbox directly. Task enqueue always goes through the transactional outbox, so a crash between <code>accepted</code> and <code>queued</code> never loses a task.</div>
+
     <h2>Task</h2>
     <p>The fundamental unit of work. A task carries an opaque payload (the <strong>envelope</strong>) from a source agent to a target consumer. Every task has a unique ID, a tenant scope, and a lifecycle state:</p>
     <pre><code>pending → claimed → in_progress → completed
