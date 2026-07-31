@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>快速开始 — Janus</title>
-    <meta name="description" content="5 分钟跑起 Janus。发布、拉取并确认你的第一个 Agent 任务。" >
+    <meta name="description" content="安装、配置并运行 Janus。发布、拉取并确认你的第一个 Agent 任务。" >
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css">
     <script src="/assets/app.js" defer></script>
@@ -20,7 +20,7 @@
 <nav class="navbar">
     <div class="nav-container">
         <a href="/zh/" class="nav-logo">
-            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="30">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="42">
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
         <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
@@ -45,25 +45,126 @@
 <div class="doc-content">
     <span class="eyebrow">文档</span>
     <h1>快速开始</h1>
-    <p>在本地跑起 Janus，并在 5 分钟内完成第一个 Agent 到 Agent 的任务交接。</p>
+    <p>安装、配置并运行 Janus，然后完成你的第一个 Agent 到 Agent 任务交接。</p>
 
     <h2>前置条件</h2>
     <ul>
-        <li>Docker 与 Docker Compose</li>
-        <li>Python 3.10+（用于 SDK 示例）</li>
+        <li><strong>Docker 与 Docker Compose</strong>（推荐方式）</li>
+        <li><strong>Python 3.10+</strong>（用于 SDK 示例）</li>
+        <li><em>或从源码构建：</em>Go 1.21+、PostgreSQL 13+、NATS 2.10+（JetStream）、Redis 7+</li>
     </ul>
 
-    <h2>1. 启动 Janus</h2>
-    <p>一条命令启动 Janus 服务端 + PostgreSQL + NATS + Redis（Compose 文件已配置好）：</p>
-    <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span></code></pre>
-    <p>验证所有服务健康：</p>
-    <pre><code><span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">healthz</span>
-<span class="tok-c"># → {&quot;status&quot;:&quot;ok&quot;}</span></code></pre>
+    <h2>1. 获取 Janus 源码</h2>
+    <p>Janus 仓库自带生产可用的 <code>Dockerfile</code> 和 <code>docker-compose.yml</code>。克隆即可获得所需的一切：</p>
+    <pre><code><span class="tok-f">git</span><span class="tok-d"> </span><span class="tok-d">clone</span><span class="tok-d"> </span><span class="tok-d">https</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus</span><span class="tok-o">.</span><span class="tok-d">git</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">Janus</span></code></pre>
+    <p>克隆后你会得到：</p>
+    <ul>
+        <li><code>Dockerfile</code> — 多阶段构建（Go 编译 → 精简 Alpine 运行时），产出 <code>janus-api</code> 二进制</li>
+        <li><code>docker-compose.yml</code> — 一条命令启动 Janus + PostgreSQL + NATS + Redis</li>
+        <li><code>configs/janus.example.yaml</code> — 参考配置文件</li>
+        <li><code>migrations/</code> — PostgreSQL 数据库迁移（启动时自动执行）</li>
+    </ul>
 
-    <h2>2. 安装 Python SDK</h2>
+    <h2>2. 用 Docker Compose 启动</h2>
+    <p>在仓库根目录下，一条命令即可构建 Janus 镜像并启动全部四个服务（janus-api、postgres:16、nats:2 含 JetStream、redis:7）：</p>
+    <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-n">--build</span></code></pre>
+    <p>首次构建需要几分钟（编译 Go 二进制）。后续启动是即时的。验证所有服务健康：</p>
+    <pre><code><span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">healthz</span>
+<span class="tok-c"># → {&quot;status&quot;:&quot;ok&quot;}</span>
+
+<span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">readyz</span>
+<span class="tok-c"># → {&quot;status&quot;:&quot;ready&quot;}  (检查 PG + NATS + Redis 连通性)</span></code></pre>
+    <p>Janus 暴露两个端口：</p>
+    <ul>
+        <li><code>8080</code> — HTTP REST API 与协议网关</li>
+        <li><code>9090</code> — gRPC API</li>
+    </ul>
+
+    <h2>3. 配置 Janus</h2>
+    <p>Janus 通过<strong>环境变量</strong>（优先级最高）和/或 <strong>YAML 配置文件</strong>读取配置。Compose 文件已为本地开发配好合理默认值。</p>
+
+    <h3>环境变量</h3>
+    <p>最常调整的变量（均以 <code>JANUS_</code> 为前缀）：</p>
+    <table>
+        <tr><th>变量</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>JANUS_CONFIG_FILE</code></td><td>—</td><td>YAML 配置文件路径（覆盖以下所有项）</td></tr>
+        <tr><td><code>JANUS_HTTP_PORT</code></td><td>8080</td><td>HTTP REST API 端口</td></tr>
+        <tr><td><code>JANUS_GRPC_PORT</code></td><td>9090</td><td>gRPC API 端口</td></tr>
+        <tr><td><code>JANUS_PG_HOST</code></td><td>localhost</td><td>PostgreSQL 主机</td></tr>
+        <tr><td><code>JANUS_PG_PORT</code></td><td>5432</td><td>PostgreSQL 端口</td></tr>
+        <tr><td><code>JANUS_PG_USER</code> / <code>PASSWORD</code> / <code>DATABASE</code></td><td>janus</td><td>PostgreSQL 凭据</td></tr>
+        <tr><td><code>JANUS_NATS_URL</code></td><td>nats://localhost:4222</td><td>NATS 连接地址</td></tr>
+        <tr><td><code>JANUS_REDIS_ADDR</code></td><td>localhost:6379</td><td>Redis 地址（限流与心跳）</td></tr>
+        <tr><td><code>JANUS_AUTH_ENABLED</code></td><td>true</td><td>开启 API 密钥认证</td></tr>
+        <tr><td><code>JANUS_MIGRATION_AUTO</code></td><td>false</td><td>启动时自动执行数据库迁移</td></tr>
+        <tr><td><code>JANUS_TLS_ENABLED</code></td><td>false</td><td>开启 TLS（配合 CERT_FILE / KEY_FILE / CLIENT_CA_FILE）</td></tr>
+    </table>
+
+    <h3>YAML 配置文件</h3>
+    <p>复杂部署时，通过 <code>JANUS_CONFIG_FILE</code> 指定 YAML 文件。可从参考文件复制起步：</p>
+    <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># 然后运行：</span>
+<span class="tok-d">JANUS_CONFIG_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+    <p>YAML 与环境变量对应，并额外提供 outbox、心跳与可观测性的结构化分段：</p>
+    <pre><code><span class="tok-d">server</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">http_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">8080</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">grpc_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">9090</span>
+
+<span class="tok-d">postgres</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">host</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">localhost</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5432</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">user</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">password</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">${JANUS_PG_PASSWORD}</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 支持环境变量插值</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">database</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_conns</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">20</span>
+
+<span class="tok-d">nats</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">url</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;nats://localhost:4222&quot;</span>
+
+<span class="tok-d">cache</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">driver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">addr</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;localhost:6379&quot;</span>
+
+<span class="tok-d">log</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">level</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">info</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># debug | info | warn | error</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">format</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">json</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># json | text</span>
+
+<span class="tok-d">migration</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">auto</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">migrations</span><span class="tok-o">/</span>
+
+<span class="tok-d">outbox</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enable</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">batch_size</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">100</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_retries</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 重试耗尽 → 死信队列</span>
+
+<span class="tok-d">observability</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">metrics</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">/</span><span class="tok-d">metrics</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tracing</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector 地址</span></code></pre>
+
+    <h2>4. 从源码构建（可选）</h2>
+    <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
+    <pre><code><span class="tok-c"># 启动三个依赖服务</span>
+<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+
+<span class="tok-c"># 编译服务端二进制</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
+
+<span class="tok-c"># 通过环境变量运行</span>
+<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+
+    <h2>5. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
-    <h2>3. 发布一个任务</h2>
+    <h2>6. 发布一个任务</h2>
     <p>创建文件 <code>publish.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -87,7 +188,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>4. 拉取并完成任务</h2>
+    <h2>7. 拉取并完成任务</h2>
     <p>创建文件 <code>worker.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -110,7 +211,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Task completed&quot;</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">worker</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>5. 用 CLI 验证</h2>
+    <h2>8. 用 CLI 验证</h2>
     <p>使用 Janus CLI 查看任务状态：</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>
@@ -118,21 +219,27 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → review-mb  tasks: 1  pending: 0</span></code></pre>
 
+    <h2>生产部署</h2>
+    <p>对于 Kubernetes，Janus 提供 Helm chart，内置存活/就绪探针、迁移 Job 钩子、HPA、PDB 与 Prometheus 采集注解：</p>
+    <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
+    <p>完整的 chart values 与运维手册见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</p>
+
     <h2>下一步</h2>
     <ul>
         <li><a href="/zh/docs/concepts.html">阅读核心概念</a> — 理解邮箱、任务、租约与信封</li>
         <li><a href="/zh/docs/sdk.html">SDK 指南</a> — 使用 Go、Python 或 TypeScript SDK</li>
+        <li><a href="/zh/docs/api.html">API 参考</a> — REST 端点、gRPC 与错误处理</li>
         <li><a href="/zh/scenarios/code-review.html">代码审核场景</a> — 多 Agent 代码审核流水线</li>
     </ul>
 
-    <div class="note">Janus 默认<strong>开启鉴权</strong>。本地开发不需要鉴权时，在环境中设置 <code>AUTH_ENABLED=false</code>。</div>
+    <div class="note">Janus 默认<strong>开启鉴权</strong>。Compose 文件为本地便利设置了 <code>JANUS_AUTH_ENABLED=false</code>——在将 Janus 暴露到网络前，请重新开启（并通过 <code>janus api-key create</code> 创建 API 密钥）。</div>
 </div>
 
 <footer class="footer">
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="26">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="36">
             </div>
             <div class="footer-links">
                 <div class="footer-col">

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Start — Janus</title>
-    <meta name="description" content="Get Janus running in 5 minutes. Publish, pull, and acknowledge your first agent task.">
+    <meta name="description" content="Install, configure, and run Janus. Publish, pull, and acknowledge your first agent task.">
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css">
     <script src="/assets/app.js" defer></script>
@@ -19,7 +19,7 @@
 <nav class="navbar">
     <div class="nav-container">
         <a href="/" class="nav-logo">
-            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="30">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="42">
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
         <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
@@ -44,25 +44,126 @@
 <div class="doc-content">
     <span class="eyebrow">Documentation</span>
     <h1>Quick Start</h1>
-    <p>Get Janus running locally and complete your first agent-to-agent task handoff in 5 minutes.</p>
+    <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
 
     <h2>Prerequisites</h2>
     <ul>
-        <li>Docker &amp; Docker Compose</li>
-        <li>Python 3.10+ (for the SDK example)</li>
+        <li><strong>Docker &amp; Docker Compose</strong> (recommended path)</li>
+        <li><strong>Python 3.10+</strong> (for the SDK example)</li>
+        <li><em>Or, to build from source:</em> Go 1.21+, PostgreSQL 13+, NATS 2.10+ (JetStream), Redis 7+</li>
     </ul>
 
-    <h2>1. Start Janus</h2>
-    <p>The Compose file starts Janus server + PostgreSQL + NATS + Redis with a single command:</p>
-    <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span></code></pre>
-    <p>Verify all services are healthy:</p>
-    <pre><code><span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">healthz</span>
-<span class="tok-c"># → {&quot;status&quot;:&quot;ok&quot;}</span></code></pre>
+    <h2>1. Get the Janus Source</h2>
+    <p>The Janus repository ships with a production-ready <code>Dockerfile</code> and <code>docker-compose.yml</code>. Clone it to get everything you need:</p>
+    <pre><code><span class="tok-f">git</span><span class="tok-d"> </span><span class="tok-d">clone</span><span class="tok-d"> </span><span class="tok-d">https</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus</span><span class="tok-o">.</span><span class="tok-d">git</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">Janus</span></code></pre>
+    <p>The clone gives you:</p>
+    <ul>
+        <li><code>Dockerfile</code> — multi-stage build (Go builder → minimal Alpine runtime), produces the <code>janus-api</code> binary</li>
+        <li><code>docker-compose.yml</code> — one command brings up Janus + PostgreSQL + NATS + Redis</li>
+        <li><code>configs/janus.example.yaml</code> — reference configuration file</li>
+        <li><code>migrations/</code> — PostgreSQL schema migrations (auto-applied on boot)</li>
+    </ul>
 
-    <h2>2. Install the Python SDK</h2>
+    <h2>2. Start Janus with Docker Compose</h2>
+    <p>From the repo root, a single command builds the Janus image and starts all four services (janus-api, postgres:16, nats:2 with JetStream, redis:7):</p>
+    <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-n">--build</span></code></pre>
+    <p>The first build takes a couple of minutes (compiles the Go binary). Subsequent starts are instant. Verify every service is healthy:</p>
+    <pre><code><span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">healthz</span>
+<span class="tok-c"># → {&quot;status&quot;:&quot;ok&quot;}</span>
+
+<span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">readyz</span>
+<span class="tok-c"># → {&quot;status&quot;:&quot;ready&quot;}  (checks PG + NATS + Redis connectivity)</span></code></pre>
+    <p>Janus exposes two ports:</p>
+    <ul>
+        <li><code>8080</code> — HTTP REST API &amp; protocol gateways</li>
+        <li><code>9090</code> — gRPC API</li>
+    </ul>
+
+    <h2>3. Configure Janus</h2>
+    <p>Janus reads configuration from <strong>environment variables</strong> (highest priority) and/or a <strong>YAML config file</strong>. The Compose file already wires up sensible defaults for local development.</p>
+
+    <h3>Environment Variables</h3>
+    <p>The most commonly tuned variables (all prefixed <code>JANUS_</code>):</p>
+    <table>
+        <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>JANUS_CONFIG_FILE</code></td><td>—</td><td>Path to a YAML config file (overrides all of the below)</td></tr>
+        <tr><td><code>JANUS_HTTP_PORT</code></td><td>8080</td><td>HTTP REST API port</td></tr>
+        <tr><td><code>JANUS_GRPC_PORT</code></td><td>9090</td><td>gRPC API port</td></tr>
+        <tr><td><code>JANUS_PG_HOST</code></td><td>localhost</td><td>PostgreSQL host</td></tr>
+        <tr><td><code>JANUS_PG_PORT</code></td><td>5432</td><td>PostgreSQL port</td></tr>
+        <tr><td><code>JANUS_PG_USER</code> / <code>PASSWORD</code> / <code>DATABASE</code></td><td>janus</td><td>PostgreSQL credentials</td></tr>
+        <tr><td><code>JANUS_NATS_URL</code></td><td>nats://localhost:4222</td><td>NATS connection URL</td></tr>
+        <tr><td><code>JANUS_REDIS_ADDR</code></td><td>localhost:6379</td><td>Redis address (rate-limit &amp; heartbeat)</td></tr>
+        <tr><td><code>JANUS_AUTH_ENABLED</code></td><td>true</td><td>Enable API key authentication</td></tr>
+        <tr><td><code>JANUS_MIGRATION_AUTO</code></td><td>false</td><td>Auto-run DB migrations on boot</td></tr>
+        <tr><td><code>JANUS_TLS_ENABLED</code></td><td>false</td><td>Enable TLS (set with CERT_FILE / KEY_FILE / CLIENT_CA_FILE)</td></tr>
+    </table>
+
+    <h3>YAML Config File</h3>
+    <p>For complex deployments, point Janus at a YAML file via <code>JANUS_CONFIG_FILE</code>. Start from the reference file:</p>
+    <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># Then run with:</span>
+<span class="tok-d">JANUS_CONFIG_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+    <p>The YAML mirrors the environment variables and adds structured sections for the outbox, heartbeat, and observability:</p>
+    <pre><code><span class="tok-d">server</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">http_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">8080</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">grpc_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">9090</span>
+
+<span class="tok-d">postgres</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">host</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">localhost</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5432</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">user</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">password</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">${JANUS_PG_PASSWORD}</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># env interpolation supported</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">database</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_conns</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">20</span>
+
+<span class="tok-d">nats</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">url</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;nats://localhost:4222&quot;</span>
+
+<span class="tok-d">cache</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">driver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">addr</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;localhost:6379&quot;</span>
+
+<span class="tok-d">log</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">level</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">info</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># debug | info | warn | error</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">format</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">json</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># json | text</span>
+
+<span class="tok-d">migration</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">auto</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">migrations</span><span class="tok-o">/</span>
+
+<span class="tok-d">outbox</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enable</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">batch_size</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">100</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_retries</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># retry exhausted → dead letter queue</span>
+
+<span class="tok-d">observability</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">metrics</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">/</span><span class="tok-d">metrics</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tracing</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector endpoint</span></code></pre>
+
+    <h2>4. Build from Source (optional)</h2>
+    <p>To run Janus outside Docker (development, custom builds, debugging):</p>
+    <pre><code><span class="tok-c"># Start the three dependencies</span>
+<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
+
+<span class="tok-c"># Build the server binary</span>
+<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
+
+<span class="tok-c"># Run with environment variables</span>
+<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
+<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
+
+    <h2>5. Install the Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
-    <h2>3. Publish a Task</h2>
+    <h2>6. Publish a Task</h2>
     <p>Create a file <code>publish.py</code>:</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -86,7 +187,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>4. Pull and Complete the Task</h2>
+    <h2>7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -109,7 +210,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Task completed&quot;</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">worker</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>5. Verify via CLI</h2>
+    <h2>8. Verify via CLI</h2>
     <p>Use the Janus CLI to check task state:</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>
@@ -117,21 +218,27 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → review-mb  tasks: 1  pending: 0</span></code></pre>
 
+    <h2>Production Deployment</h2>
+    <p>For Kubernetes, Janus ships a Helm chart with liveness/readiness probes, a migration Job hook, HPA, PDB, and Prometheus scrape annotations:</p>
+    <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
+    <p>See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for the full chart values and the ops runbook.</p>
+
     <h2>What's Next</h2>
     <ul>
         <li><a href="/docs/concepts.html">Read Core Concepts</a> — understand mailboxes, tasks, leases, and envelopes</li>
         <li><a href="/docs/sdk.html">SDK Guide</a> — use Go, Python, or TypeScript SDKs</li>
+        <li><a href="/docs/api.html">API Reference</a> — REST endpoints, gRPC, and error handling</li>
         <li><a href="/scenarios/code-review.html">Code Review Scenario</a> — multi-agent code review pipeline</li>
     </ul>
 
-    <div class="note">Janus runs with <strong>auth enabled by default</strong>. For local development without auth, set <code>AUTH_ENABLED=false</code> in your environment.</div>
+    <div class="note">Janus runs with <strong>auth enabled by default</strong>. The Compose file sets <code>JANUS_AUTH_ENABLED=false</code> for local convenience — re-enable it (and create an API key via <code>janus api-key create</code>) before exposing Janus to a network.</div>
 </div>
 
 <footer class="footer">
     <div class="container">
         <div class="footer-content">
             <div class="footer-brand">
-                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="26">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="36">
             </div>
             <div class="footer-links">
                 <div class="footer-col">
