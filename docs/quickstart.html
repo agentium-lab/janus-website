@@ -39,22 +39,41 @@
 <div class="doc-hero">
     <span class="doc-hero-glow" aria-hidden="true"></span>
 </div>
-<div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">Contents</div>
+        <ul>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#get-source">1. Get the Source</a></li>
+            <li><a href="#start-janus">2. Start with Docker</a></li>
+            <li><a href="#configure">3. Configure</a></li>
+            <li><a href="#build-from-source">4. Build from Source</a></li>
+            <li><a href="#install-sdk">5. Install the SDK</a></li>
+            <li><a href="#publish-task">6. Publish a Task</a></li>
+            <li><a href="#pull-task">7. Pull &amp; Complete</a></li>
+            <li><a href="#verify-cli">8. Verify via CLI</a></li>
+            <li><a href="#cli-reference">CLI Reference</a></li>
+            <li><a href="#production">Production</a></li>
+            <li><a href="#whats-next">What's Next</a></li>
+        </ul>
+    </aside>
+    <div class="doc-content-col">
+        <div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
 
-<div class="doc-content">
+        <div class="doc-content">
     <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
     <span class="eyebrow">Documentation</span>
     <h1>Quick Start</h1>
     <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
 
-    <h2>Prerequisites</h2>
+    <h2 id="prerequisites">Prerequisites</h2>
     <ul>
         <li><strong>Docker &amp; Docker Compose</strong> (recommended path)</li>
         <li><strong>Python 3.10+</strong> (for the SDK example)</li>
         <li><em>Or, to build from source:</em> Go 1.21+, PostgreSQL 13+, NATS 2.10+ (JetStream), Redis 7+</li>
     </ul>
 
-    <h2>1. Get the Janus Source</h2>
+    <h2 id="get-source">1. Get the Janus Source</h2>
     <p>The Janus repository ships with a production-ready <code>Dockerfile</code> and <code>docker-compose.yml</code>. Clone it to get everything you need:</p>
     <pre><code><span class="tok-f">git</span><span class="tok-d"> </span><span class="tok-d">clone</span><span class="tok-d"> </span><span class="tok-d">https</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus</span><span class="tok-o">.</span><span class="tok-d">git</span>
 <span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">Janus</span></code></pre>
@@ -66,7 +85,7 @@
         <li><code>migrations/</code> — PostgreSQL schema migrations (auto-applied on boot)</li>
     </ul>
 
-    <h2>2. Start Janus with Docker Compose</h2>
+    <h2 id="start-janus">2. Start Janus with Docker Compose</h2>
     <p>From the repo root, a single command builds the Janus image and starts all four services (janus-api, postgres:16, nats:2 with JetStream, redis:7):</p>
     <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-n">--build</span></code></pre>
     <p>The first build takes a couple of minutes (compiles the Go binary). Subsequent starts are instant. Verify every service is healthy:</p>
@@ -81,7 +100,7 @@
         <li><code>9090</code> — gRPC API</li>
     </ul>
 
-    <h2>3. Configure Janus</h2>
+    <h2 id="configure">3. Configure Janus</h2>
     <p>Janus reads configuration from <strong>environment variables</strong> (highest priority) and/or a <strong>YAML config file</strong>. The Compose file already wires up sensible defaults for local development.</p>
 
     <h3>Environment Variables</h3>
@@ -226,8 +245,140 @@
 <span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
     <p>Full schema: <code>configs/janus.project.example.yaml</code> in the repo.</p>
 
+    <h3 id="config-field-reference">Field Reference</h3>
+    <p>Every field maps to a Janus core resource. The tables below explain each level of the file.</p>
 
-    <h2>4. Build from Source (optional)</h2>
+    <p><strong>Top level</strong></p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>version</code></td><td>string</td><td>Schema version. Currently <code>v1</code>. <strong>Required.</strong></td></tr>
+        <tr><td><code>default_tenant</code></td><td>string</td><td>Tenant targeted when <code>--tenant</code> isn't passed. Must exist under <code>tenants</code>.</td></tr>
+        <tr><td><code>defaults</code></td><td>object</td><td>Values inherited by every tenant and agent unless overridden locally.</td></tr>
+        <tr><td><code>tenants</code></td><td>map</td><td>Tenant declarations, keyed by tenant ID. <strong>Required.</strong></td></tr>
+    </table>
+
+    <p><strong><code>defaults</code></strong> — inherited by all tenants:</p>
+    <table>
+        <tr><th>Field</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>protocol</code></td><td><code>custom-sdk</code></td><td>Agent communication protocol. Applied when an agent doesn't set its own.</td></tr>
+        <tr><td><code>classification</code></td><td>—</td><td>Default data classification. One of: <code>public</code>, <code>internal</code>, <code>confidential</code>, <code>restricted</code>.</td></tr>
+        <tr><td><code>mailbox.ack_wait_seconds</code></td><td>—</td><td>Seconds before an unacked task is redelivered to the mailbox.</td></tr>
+        <tr><td><code>mailbox.max_deliver</code></td><td>—</td><td>Max delivery attempts before the task moves to the dead letter queue.</td></tr>
+        <tr><td><code>mailbox.retention_seconds</code></td><td>—</td><td>How long completed mailbox state is retained.</td></tr>
+        <tr><td><code>capacity.max_concurrency</code></td><td><code>1</code></td><td>Default max concurrent in-flight tasks per agent.</td></tr>
+        <tr><td><code>policy.priority</code></td><td>—</td><td>Priority assigned to auto-generated policy rules (higher = evaluated first).</td></tr>
+    </table>
+
+    <p><strong>Tenant</strong> (<code>tenants.&lt;id&gt;</code>):</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>Human-readable display name.</td></tr>
+        <tr><td><code>agents</code></td><td>map</td><td>Agent declarations keyed by agent ID.</td></tr>
+        <tr><td><code>budgets</code></td><td>object</td><td>Cost and rate limits at tenant, team, agent, model, and task scope.</td></tr>
+        <tr><td><code>policies</code></td><td>object</td><td>Allow, deny, approval, and data-classification rules compiled into policy templates.</td></tr>
+    </table>
+
+    <p><strong>Agent</strong> (<code>tenants.&lt;id&gt;.agents.&lt;id&gt;</code>):</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>Display name. Defaults to the agent ID.</td></tr>
+        <tr><td><code>team</code></td><td>string</td><td>Team ID. Enables team-level budgets and policy targeting.</td></tr>
+        <tr><td><code>protocol</code></td><td>string</td><td>Overrides <code>defaults.protocol</code> for this agent.</td></tr>
+        <tr><td><code>endpoint</code></td><td>string</td><td>Callback URL where the agent receives task notifications.</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>Free-text description of what the agent does.</td></tr>
+        <tr><td><code>capabilities</code></td><td>list</td><td>Capabilities this agent can handle. Each entry is a string or an object with <code>id</code>, <code>description</code>, and <code>data_classifications</code>. <strong>Required — at least one.</strong></td></tr>
+        <tr><td><code>concurrency</code></td><td>int</td><td>Max concurrent in-flight tasks. Overrides <code>capacity.max_concurrency</code>.</td></tr>
+        <tr><td><code>rpm</code> / <code>tpm</code></td><td>int</td><td>Requests-per-minute and tokens-per-minute metadata for budget enforcement.</td></tr>
+        <tr><td><code>mailbox</code></td><td>object</td><td>Per-agent mailbox override. If omitted, a default mailbox <code>&lt;agent-id&gt;.default</code> is auto-created.</td></tr>
+    </table>
+
+    <p><strong>Budget limits</strong> — each budget scope accepts the same fields:</p>
+    <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>rpm</code></td><td>Max requests per minute.</td></tr>
+        <tr><td><code>tpm</code></td><td>Max tokens per minute.</td></tr>
+        <tr><td><code>concurrency</code></td><td>Max concurrent operations.</td></tr>
+        <tr><td><code>daily_usd</code></td><td>Daily cost cap in USD.</td></tr>
+        <tr><td><code>monthly_usd</code></td><td>Monthly cost cap in USD.</td></tr>
+    </table>
+    <p>Budget scopes: <code>tenant</code> (whole tenant), <code>teams.&lt;id&gt;</code>, <code>agents.&lt;id&gt;</code>, <code>models.&lt;id&gt;</code>, <code>model_providers.&lt;id&gt;</code>, <code>tasks.&lt;id&gt;</code>.</p>
+
+    <p><strong>Policies</strong> — compiled into policy rules via templates:</p>
+    <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>approve.capabilities</code></td><td>Capabilities that require human approval before execution.</td></tr>
+        <tr><td><code>approve.tools</code></td><td>Tools that require human approval before invocation.</td></tr>
+        <tr><td><code>allow</code> / <code>deny</code></td><td>Bindings of <code>agent</code> or <code>team</code> to a <code>capability</code> or <code>tool</code>. A binding must set exactly one of agent/team and one of capability/tool.</td></tr>
+        <tr><td><code>data_classification.allow/deny</code></td><td>Controls which data classifications an agent or team may receive.</td></tr>
+    </table>
+
+    <h3 id="config-multi-agent">Multi-Agent Example</h3>
+    <p>A realistic project file with three agents across two teams, per-team budgets, and governance policies:</p>
+    <pre><code><span class="tok-p">version</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">v1</span>
+<span class="tok-p">default_tenant</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-p">defaults</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">protocol</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span>
+<span class="tok-d">  </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">300</span>
+<span class="tok-d">    </span><span class="tok-p">max_deliver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">5</span>
+<span class="tok-d">  </span><span class="tok-p">policy</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">priority</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
+
+<span class="tok-p">tenants</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">acme</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Acme Engineering</span>
+<span class="tok-d">    </span><span class="tok-p">agents</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">code-review</span><span class="tok-o">:</span><span class="tok-d">          </span><span class="tok-c"># agent 1: reviews pull requests</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d">            </span><span class="tok-p">data_classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[public, internal, confidential]</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
+<span class="tok-d">      </span><span class="tok-p">test-runner</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-c"># agent 2: runs test suites</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[test_run]</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">8</span>
+<span class="tok-d">      </span><span class="tok-p">deploy-bot</span><span class="tok-o">:</span><span class="tok-d">            </span><span class="tok-c"># agent 3: production deployments</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">sre</span>
+<span class="tok-d">        </span><span class="tok-p">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">https://deploy.internal.acme.com</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">prod_deploy</span>
+<span class="tok-d">            </span><span class="tok-p">description</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Deploy to production</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">1</span>
+<span class="tok-d">        </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600</span><span class="tok-d">    </span><span class="tok-c"># deploys take longer</span>
+<span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span>
+<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span>
+<span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
+<span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
+<span class="tok-d">        </span><span class="tok-p">sre</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
+<span class="tok-d">          </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
+<span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-d">   </span><span class="tok-c"># require human approval</span>
+<span class="tok-d">        </span><span class="tok-p">tools</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[deploy.prod]</span>
+<span class="tok-d">      </span><span class="tok-p">allow</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code-review</span>
+<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test-runner</span>
+<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test_run</span>
+<span class="tok-d">      </span><span class="tok-p">deny</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy-bot</span>
+<span class="tok-d">          </span><span class="tok-p">tool</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy.prod</span><span class="tok-d">          </span><span class="tok-c"># blocked unless approved</span>
+<span class="tok-d">      </span><span class="tok-p">data_classification</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">deny</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">interns</span>
+<span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
+    <div class="note">The project file is declarative and idempotent — <code>janus project apply</code> creates missing resources and updates existing ones without deleting anything. Run <code>janus project diff</code> first to preview changes.</div>
+
+
+    <h2 id="build-from-source">4. Build from Source (optional)</h2>
     <p>To run Janus outside Docker (development, custom builds, debugging):</p>
     <pre><code><span class="tok-c"># Start the three dependencies</span>
 <span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
@@ -240,10 +391,10 @@
 <span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
 <span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
 
-    <h2>5. Install the Python SDK</h2>
+    <h2 id="install-sdk">5. Install the Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
-    <h2>6. Publish a Task</h2>
+    <h2 id="publish-task">6. Publish a Task</h2>
     <p>Create a file <code>publish.py</code>:</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -267,7 +418,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>7. Pull and Complete the Task</h2>
+    <h2 id="pull-task">7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -290,7 +441,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Task completed&quot;</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">worker</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>8. Verify via CLI</h2>
+    <h2 id="verify-cli">8. Verify via CLI</h2>
     <p>Use the Janus CLI to check task state:</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>
@@ -298,12 +449,82 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → review-mb  tasks: 1  pending: 0</span></code></pre>
 
-    <h2>Production Deployment</h2>
+    <h2 id="cli-reference">CLI Reference</h2>
+    <p>The <code>janus</code> CLI is the primary tool for managing agents, tasks, mailboxes, API keys, policies, and project configuration. It talks to the Janus API server over HTTP — point it at your server with <code>--server</code>.</p>
+
+    <h3 id="cli-global-flags">Global Flags</h3>
+    <p>Every command accepts these persistent flags. Set them once via environment variables to avoid repetition:</p>
+    <table>
+        <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>--server</code></td><td><code>http://localhost:8080</code></td><td>Janus API server URL.</td></tr>
+        <tr><td><code>--tenant</code></td><td><code>default</code></td><td>Tenant ID to operate on.</td></tr>
+        <tr><td><code>--api-key</code></td><td><code>$JANUS_API_KEY</code></td><td>API key for authentication. Falls back to the environment variable.</td></tr>
+        <tr><td><code>--file</code></td><td>—</td><td>Path to a project config file. Overrides <code>$JANUS_PROJECT_FILE</code> and the default <code>janus.project.yaml</code>.</td></tr>
+    </table>
+    <pre><code><span class="tok-c"># One-time setup for your shell session</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-s">"jak_..."</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_PROJECT_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># Now every janus command picks these up automatically</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-command-tree">Command Groups</h3>
+    <table>
+        <tr><th>Command</th><th>Subcommands</th><th>Purpose</th></tr>
+        <tr><td><code>project</code></td><td><code>init</code>, <code>validate</code>, <code>diff</code>, <code>apply</code>, <code>sync</code></td><td>Declarative tenant topology management.</td></tr>
+        <tr><td><code>tenant</code></td><td><code>add</code></td><td>Create a tenant and persist it to the project file.</td></tr>
+        <tr><td><code>agent</code></td><td><code>register</code>, <code>add</code>, <code>status</code>, <code>heartbeat</code></td><td>Register agents and check liveness.</td></tr>
+        <tr><td><code>task</code></td><td><code>publish</code>, <code>status</code>, <code>cancel</code>, <code>replay</code>, <code>events</code></td><td>Publish and inspect tasks.</td></tr>
+        <tr><td><code>mailbox</code></td><td><code>create</code>, <code>status</code>, <code>pause</code>, <code>resume</code>, <code>pull</code>, <code>ack</code>, <code>nack</code></td><td>Manage mailboxes and process tasks.</td></tr>
+        <tr><td><code>api-key</code></td><td><code>create</code>, <code>list</code>, <code>revoke</code></td><td>Tenant-scoped API key lifecycle.</td></tr>
+        <tr><td><code>policy</code></td><td><code>allow-agent</code>, <code>deny-agent</code>, <code>allow-team</code>, <code>deny-team</code>, <code>require-approval</code>, <code>allow-classification</code>, <code>deny-classification</code>, <code>allow-tool</code>, <code>deny-tool</code></td><td>Generate governance policy rules from templates.</td></tr>
+        <tr><td><code>dlq</code></td><td><code>query</code>, <code>replay</code>, <code>discard</code></td><td>Dead letter queue inspection and recovery.</td></tr>
+        <tr><td><code>dashboard</code></td><td>—</td><td>Interactive TUI for monitoring tasks, mailboxes, and agents.</td></tr>
+    </table>
+
+    <h3 id="cli-project">Project Workflow</h3>
+    <p>The project commands manage your tenant topology as code (covered in <a href="#configure">Configure</a>):</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span><span class="tok-d">                    </span><span class="tok-c"># generate janus.project.yaml</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">validate</span><span class="tok-d">                </span><span class="tok-c"># check the file for errors</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d">                     </span><span class="tok-c"># preview changes vs the live API</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-n">--all-tenants</span><span class="tok-d">      </span><span class="tok-c"># apply every tenant</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># pull live resources back into the file</span></code></pre>
+
+    <h3 id="cli-api-keys">API Keys</h3>
+    <p>API keys are tenant-scoped. Create one per environment or service and revoke them when rotated:</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-c"># → jak_live_a1b2c3d4...  (store this — shown only once)</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-c"># → jak_live_a1b2...  admin  created 2026-07-31</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-d">jak_live_a1b2</span></code></pre>
+
+    <h3 id="cli-tasks-mailboxes">Tasks &amp; Mailboxes</h3>
+    <p>Publish, pull, and acknowledge tasks — the same lifecycle the SDK wraps, but from the shell:</p>
+    <pre><code><span class="tok-c"># Publish a task to a mailbox</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--source</span><span class="tok-d"> </span><span class="tok-d">product</span><span class="tok-d"> </span><span class="tok-n">--mailbox</span><span class="tok-d"> </span><span class="tok-d">review-mb</span>
+
+<span class="tok-c"># Check task status</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">status</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-c"># Pull the next task from a mailbox</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">pull</span><span class="tok-d"> </span><span class="tok-d">review-mb</span><span class="tok-d"> </span><span class="tok-n">--agent</span><span class="tok-d"> </span><span class="tok-d">reviewer</span>
+
+<span class="tok-c"># Inspect the dead letter queue and replay</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">query</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">replay</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-dashboard">Dashboard</h3>
+    <p>Launch an interactive terminal dashboard to monitor tasks, mailboxes, and agent health in real time:</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dashboard</span><span class="tok-d"> </span><span class="tok-n">--server</span><span class="tok-d"> </span><span class="tok-d">http://localhost:8080</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h2 id="production">Production Deployment</h2>
     <p>For Kubernetes, Janus ships a Helm chart with liveness/readiness probes, a migration Job hook, HPA, PDB, and Prometheus scrape annotations:</p>
     <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
     <p>See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for the full chart values and the ops runbook.</p>
 
-    <h2>What's Next</h2>
+    <h2 id="whats-next">What's Next</h2>
     <ul>
         <li><a href="/docs/concepts.html">Read Core Concepts</a> — understand mailboxes, tasks, leases, and envelopes</li>
         <li><a href="/docs/sdk.html">SDK Guide</a> — use Go, Python, or TypeScript SDKs</li>
@@ -312,6 +533,8 @@
     </ul>
 
     <div class="note">Janus runs with <strong>auth enabled by default</strong>. The Compose file sets <code>JANUS_AUTH_ENABLED=false</code> for local convenience — re-enable it (and create an API key via <code>janus api-key create</code>) before exposing Janus to a network.</div>
+        </div>
+    </div>
 </div>
 
 <footer class="footer">

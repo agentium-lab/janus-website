@@ -163,8 +163,8 @@
         <li><strong>mTLS</strong> — 使用客户端证书的双向 TLS</li>
     </ul>
     <p>API 密钥按租户作用域划分。通过 CLI 创建与撤销密钥：</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">auth</span><span class="tok-d"> </span><span class="tok-d">create-key</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--role</span><span class="tok-d"> </span><span class="tok-d">admin</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">auth</span><span class="tok-d"> </span><span class="tok-d">revoke-key</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-d">lt</span><span class="tok-d">;</span><span class="tok-d">id</span><span class="tok-o">&amp;</span><span class="tok-d">gt</span><span class="tok-d">;</span></code></pre>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-d">lt</span><span class="tok-d">;</span><span class="tok-d">id</span><span class="tok-o">&amp;</span><span class="tok-d">gt</span><span class="tok-d">;</span></code></pre>
 
     <div class="note">完整的 protobuf 服务定义与 gRPC reflection 已在服务端开放。proto 文件见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</div>
 </div>

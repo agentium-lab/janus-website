@@ -162,8 +162,8 @@
         <li><strong>mTLS</strong> — mutual TLS with client certificates</li>
     </ul>
     <p>API keys are tenant-scoped. Create and revoke keys via the CLI:</p>
-    <pre><code>janus auth create-key --tenant acme --role admin
-janus auth revoke-key --tenant acme --key-id &lt;id&gt;</code></pre>
+    <pre><code>janus api-key create --tenant acme
+janus api-key revoke --tenant acme --key-id &lt;id&gt;</code></pre>
 
     <div class="note">The full protobuf service definitions and gRPC reflection are available on the server. See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for proto files.</div>
 </div>

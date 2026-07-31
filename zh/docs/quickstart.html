@@ -40,22 +40,41 @@
 <div class="doc-hero">
     <span class="doc-hero-glow" aria-hidden="true"></span>
 </div>
-<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">目录</div>
+        <ul>
+            <li><a href="#prerequisites">前置条件</a></li>
+            <li><a href="#get-source">1. 获取源码</a></li>
+            <li><a href="#start-janus">2. Docker 启动</a></li>
+            <li><a href="#configure">3. 配置</a></li>
+            <li><a href="#build-from-source">4. 源码构建</a></li>
+            <li><a href="#install-sdk">5. 安装 SDK</a></li>
+            <li><a href="#publish-task">6. 发布任务</a></li>
+            <li><a href="#pull-task">7. 拉取完成</a></li>
+            <li><a href="#verify-cli">8. CLI 验证</a></li>
+            <li><a href="#cli-reference">CLI 参考</a></li>
+            <li><a href="#production">生产部署</a></li>
+            <li><a href="#whats-next">下一步</a></li>
+        </ul>
+    </aside>
+    <div class="doc-content-col">
+        <div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
 
-<div class="doc-content">
+        <div class="doc-content">
     <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
     <span class="eyebrow">文档</span>
     <h1>快速开始</h1>
     <p>安装、配置并运行 Janus，然后完成你的第一个 Agent 到 Agent 任务交接。</p>
 
-    <h2>前置条件</h2>
+    <h2 id="prerequisites">前置条件</h2>
     <ul>
         <li><strong>Docker 与 Docker Compose</strong>（推荐方式）</li>
         <li><strong>Python 3.10+</strong>（用于 SDK 示例）</li>
         <li><em>或从源码构建：</em>Go 1.21+、PostgreSQL 13+、NATS 2.10+（JetStream）、Redis 7+</li>
     </ul>
 
-    <h2>1. 获取 Janus 源码</h2>
+    <h2 id="get-source">1. 获取 Janus 源码</h2>
     <p>Janus 仓库自带生产可用的 <code>Dockerfile</code> 和 <code>docker-compose.yml</code>。克隆即可获得所需的一切：</p>
     <pre><code><span class="tok-f">git</span><span class="tok-d"> </span><span class="tok-d">clone</span><span class="tok-d"> </span><span class="tok-d">https</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus</span><span class="tok-o">.</span><span class="tok-d">git</span>
 <span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">Janus</span></code></pre>
@@ -67,7 +86,7 @@
         <li><code>migrations/</code> — PostgreSQL 数据库迁移（启动时自动执行）</li>
     </ul>
 
-    <h2>2. 用 Docker Compose 启动</h2>
+    <h2 id="start-janus">2. 用 Docker Compose 启动</h2>
     <p>在仓库根目录下，一条命令即可构建 Janus 镜像并启动全部四个服务（janus-api、postgres:16、nats:2 含 JetStream、redis:7）：</p>
     <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-n">--build</span></code></pre>
     <p>首次构建需要几分钟（编译 Go 二进制）。后续启动是即时的。验证所有服务健康：</p>
@@ -82,7 +101,7 @@
         <li><code>9090</code> — gRPC API</li>
     </ul>
 
-    <h2>3. 配置 Janus</h2>
+    <h2 id="configure">3. 配置 Janus</h2>
     <p>Janus 通过<strong>环境变量</strong>（优先级最高）和/或 <strong>YAML 配置文件</strong>读取配置。Compose 文件已为本地开发配好合理默认值。</p>
 
     <h3>环境变量</h3>
@@ -227,8 +246,140 @@
 <span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
     <p>完整 schema 见仓库中的 <code>configs/janus.project.example.yaml</code>。</p>
 
+    <h3 id="config-field-reference">字段参考</h3>
+    <p>每个字段都映射到 Janus 核心资源。下表说明文件每一层级的含义。</p>
 
-    <h2>4. 从源码构建（可选）</h2>
+    <p><strong>顶层</strong></p>
+    <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>version</code></td><td>string</td><td>Schema 版本。当前为 <code>v1</code>。<strong>必填。</strong></td></tr>
+        <tr><td><code>default_tenant</code></td><td>string</td><td>未传 <code>--tenant</code> 时默认操作的租户。必须存在于 <code>tenants</code> 下。</td></tr>
+        <tr><td><code>defaults</code></td><td>object</td><td>所有租户与 Agent 继承的默认值，可在本地覆盖。</td></tr>
+        <tr><td><code>tenants</code></td><td>map</td><td>租户声明，以租户 ID 为键。<strong>必填。</strong></td></tr>
+    </table>
+
+    <p><strong><code>defaults</code></strong> — 被所有租户继承：</p>
+    <table>
+        <tr><th>字段</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>protocol</code></td><td><code>custom-sdk</code></td><td>Agent 通信协议。当 Agent 未单独设置时生效。</td></tr>
+        <tr><td><code>classification</code></td><td>—</td><td>默认数据分类。取值：<code>public</code>、<code>internal</code>、<code>confidential</code>、<code>restricted</code>。</td></tr>
+        <tr><td><code>mailbox.ack_wait_seconds</code></td><td>—</td><td>任务未被确认前，多少秒后被重新投递到邮箱。</td></tr>
+        <tr><td><code>mailbox.max_deliver</code></td><td>—</td><td>投递尝试达到上限后，任务进入死信队列。</td></tr>
+        <tr><td><code>mailbox.retention_seconds</code></td><td>—</td><td>已完成的邮箱状态保留多久。</td></tr>
+        <tr><td><code>capacity.max_concurrency</code></td><td><code>1</code></td><td>每个 Agent 默认的最大并发进行中任务数。</td></tr>
+        <tr><td><code>policy.priority</code></td><td>—</td><td>自动生成的策略规则的优先级（越大越先评估）。</td></tr>
+    </table>
+
+    <p><strong>租户</strong>（<code>tenants.&lt;id&gt;</code>）：</p>
+    <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>人类可读的显示名称。</td></tr>
+        <tr><td><code>agents</code></td><td>map</td><td>Agent 声明，以 Agent ID 为键。</td></tr>
+        <tr><td><code>budgets</code></td><td>object</td><td>租户、团队、Agent、模型与任务作用域的成本与速率限制。</td></tr>
+        <tr><td><code>policies</code></td><td>object</td><td>allow、deny、审批与数据分类规则，编译为策略模板。</td></tr>
+    </table>
+
+    <p><strong>Agent</strong>（<code>tenants.&lt;id&gt;.agents.&lt;id&gt;</code>）：</p>
+    <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>显示名称。默认取 Agent ID。</td></tr>
+        <tr><td><code>team</code></td><td>string</td><td>团队 ID。启用团队级预算与策略定位。</td></tr>
+        <tr><td><code>protocol</code></td><td>string</td><td>为该 Agent 覆盖 <code>defaults.protocol</code>。</td></tr>
+        <tr><td><code>endpoint</code></td><td>string</td><td>Agent 接收任务通知的回调地址。</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>该 Agent 职责的自由文本描述。</td></tr>
+        <tr><td><code>capabilities</code></td><td>list</td><td>该 Agent 能处理的能力。每项是字符串或含 <code>id</code>、<code>description</code>、<code>data_classifications</code> 的对象。<strong>必填 — 至少一个。</strong></td></tr>
+        <tr><td><code>concurrency</code></td><td>int</td><td>最大并发进行中任务数。覆盖 <code>capacity.max_concurrency</code>。</td></tr>
+        <tr><td><code>rpm</code> / <code>tpm</code></td><td>int</td><td>每分钟请求数与每分钟 token 数，用于预算执行。</td></tr>
+        <tr><td><code>mailbox</code></td><td>object</td><td>Agent 级邮箱覆盖。若省略，自动创建默认邮箱 <code>&lt;agent-id&gt;.default</code>。</td></tr>
+    </table>
+
+    <p><strong>预算限额</strong> — 每个预算作用域接受相同的字段：</p>
+    <table>
+        <tr><th>字段</th><th>说明</th></tr>
+        <tr><td><code>rpm</code></td><td>每分钟最大请求数。</td></tr>
+        <tr><td><code>tpm</code></td><td>每分钟最大 token 数。</td></tr>
+        <tr><td><code>concurrency</code></td><td>最大并发操作数。</td></tr>
+        <tr><td><code>daily_usd</code></td><td>每日成本上限（美元）。</td></tr>
+        <tr><td><code>monthly_usd</code></td><td>每月成本上限（美元）。</td></tr>
+    </table>
+    <p>预算作用域：<code>tenant</code>（整个租户）、<code>teams.&lt;id&gt;</code>、<code>agents.&lt;id&gt;</code>、<code>models.&lt;id&gt;</code>、<code>model_providers.&lt;id&gt;</code>、<code>tasks.&lt;id&gt;</code>。</p>
+
+    <p><strong>策略</strong> — 通过模板编译为策略规则：</p>
+    <table>
+        <tr><th>字段</th><th>说明</th></tr>
+        <tr><td><code>approve.capabilities</code></td><td>执行前需要人工审批的能力。</td></tr>
+        <tr><td><code>approve.tools</code></td><td>调用前需要人工审批的工具。</td></tr>
+        <tr><td><code>allow</code> / <code>deny</code></td><td>将 <code>agent</code> 或 <code>team</code> 绑定到 <code>capability</code> 或 <code>tool</code>。每条绑定必须且只能设置 agent/team 之一、capability/tool 之一。</td></tr>
+        <tr><td><code>data_classification.allow/deny</code></td><td>控制 Agent 或团队可以接收哪些数据分类。</td></tr>
+    </table>
+
+    <h3 id="config-multi-agent">多 Agent 示例</h3>
+    <p>一个真实项目文件：三个 Agent、两个团队，含团队级预算与治理策略：</p>
+    <pre><code><span class="tok-p">version</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">v1</span>
+<span class="tok-p">default_tenant</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-p">defaults</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">protocol</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span>
+<span class="tok-d">  </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">300</span>
+<span class="tok-d">    </span><span class="tok-p">max_deliver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">5</span>
+<span class="tok-d">  </span><span class="tok-p">policy</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">priority</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
+
+<span class="tok-p">tenants</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">acme</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-p">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Acme Engineering</span>
+<span class="tok-d">    </span><span class="tok-p">agents</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">code-review</span><span class="tok-o">:</span><span class="tok-d">          </span><span class="tok-c"># Agent 1：审核 Pull Request</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d">            </span><span class="tok-p">data_classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[public, internal, confidential]</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
+<span class="tok-d">      </span><span class="tok-p">test-runner</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-c"># Agent 2：运行测试套件</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[test_run]</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">8</span>
+<span class="tok-d">      </span><span class="tok-p">deploy-bot</span><span class="tok-o">:</span><span class="tok-d">            </span><span class="tok-c"># Agent 3：生产部署</span>
+<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">sre</span>
+<span class="tok-d">        </span><span class="tok-p">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">https://deploy.internal.acme.com</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">prod_deploy</span>
+<span class="tok-d">            </span><span class="tok-p">description</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Deploy to production</span>
+<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">1</span>
+<span class="tok-d">        </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600</span><span class="tok-d">    </span><span class="tok-c"># 部署耗时更长</span>
+<span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span>
+<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span>
+<span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
+<span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
+<span class="tok-d">        </span><span class="tok-p">sre</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
+<span class="tok-d">          </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
+<span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
+<span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-d">   </span><span class="tok-c"># 需要人工审批</span>
+<span class="tok-d">        </span><span class="tok-p">tools</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[deploy.prod]</span>
+<span class="tok-d">      </span><span class="tok-p">allow</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code-review</span>
+<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test-runner</span>
+<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test_run</span>
+<span class="tok-d">      </span><span class="tok-p">deny</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy-bot</span>
+<span class="tok-d">          </span><span class="tok-p">tool</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy.prod</span><span class="tok-d">          </span><span class="tok-c"># 未经审批则被阻止</span>
+<span class="tok-d">      </span><span class="tok-p">data_classification</span><span class="tok-o">:</span>
+<span class="tok-d">        </span><span class="tok-p">deny</span><span class="tok-o">:</span>
+<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">interns</span>
+<span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
+    <div class="note">项目文件是声明式且幂等的 —— <code>janus project apply</code> 创建缺失的资源、更新已有资源，但不会删除任何内容。先运行 <code>janus project diff</code> 预览变更。</div>
+
+
+    <h2 id="build-from-source">4. 从源码构建（可选）</h2>
     <p>若需在 Docker 之外运行 Janus（开发、自定义构建、调试）：</p>
     <pre><code><span class="tok-c"># 启动三个依赖服务</span>
 <span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
@@ -241,10 +392,10 @@
 <span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
 <span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
 
-    <h2>5. 安装 Python SDK</h2>
+    <h2 id="install-sdk">5. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
-    <h2>6. 发布一个任务</h2>
+    <h2 id="publish-task">6. 发布一个任务</h2>
     <p>创建文件 <code>publish.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -268,7 +419,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>7. 拉取并完成任务</h2>
+    <h2 id="pull-task">7. 拉取并完成任务</h2>
     <p>创建文件 <code>worker.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
@@ -291,7 +442,7 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Task completed&quot;</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">worker</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>8. 用 CLI 验证</h2>
+    <h2 id="verify-cli">8. 用 CLI 验证</h2>
     <p>使用 Janus CLI 查看任务状态：</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>
@@ -299,12 +450,82 @@
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → review-mb  tasks: 1  pending: 0</span></code></pre>
 
-    <h2>生产部署</h2>
+    <h2 id="cli-reference">CLI 参考</h2>
+    <p><code>janus</code> CLI 是管理 Agent、任务、邮箱、API 密钥、策略与项目配置的主要工具。它通过 HTTP 与 Janus API 服务端通信 —— 用 <code>--server</code> 指定服务端地址。</p>
+
+    <h3 id="cli-global-flags">全局参数</h3>
+    <p>所有命令都接受以下持久参数。可通过环境变量一次性设置，避免重复输入：</p>
+    <table>
+        <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>--server</code></td><td><code>http://localhost:8080</code></td><td>Janus API 服务端地址。</td></tr>
+        <tr><td><code>--tenant</code></td><td><code>default</code></td><td>要操作的租户 ID。</td></tr>
+        <tr><td><code>--api-key</code></td><td><code>$JANUS_API_KEY</code></td><td>认证用 API 密钥。回退到环境变量。</td></tr>
+        <tr><td><code>--file</code></td><td>—</td><td>项目配置文件路径。覆盖 <code>$JANUS_PROJECT_FILE</code> 与默认的 <code>janus.project.yaml</code>。</td></tr>
+    </table>
+    <pre><code><span class="tok-c"># 为你的 shell 会话做一次性设置</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-s">"jak_..."</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_PROJECT_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># 之后所有 janus 命令都会自动读取这些值</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-command-tree">命令分组</h3>
+    <table>
+        <tr><th>命令</th><th>子命令</th><th>用途</th></tr>
+        <tr><td><code>project</code></td><td><code>init</code>、<code>validate</code>、<code>diff</code>、<code>apply</code>、<code>sync</code></td><td>声明式租户拓扑管理。</td></tr>
+        <tr><td><code>tenant</code></td><td><code>add</code></td><td>创建租户并持久化到项目文件。</td></tr>
+        <tr><td><code>agent</code></td><td><code>register</code>、<code>add</code>、<code>status</code>、<code>heartbeat</code></td><td>注册 Agent 并检查存活。</td></tr>
+        <tr><td><code>task</code></td><td><code>publish</code>、<code>status</code>、<code>cancel</code>、<code>replay</code>、<code>events</code></td><td>发布与查看任务。</td></tr>
+        <tr><td><code>mailbox</code></td><td><code>create</code>、<code>status</code>、<code>pause</code>、<code>resume</code>、<code>pull</code>、<code>ack</code>、<code>nack</code></td><td>管理邮箱并处理任务。</td></tr>
+        <tr><td><code>api-key</code></td><td><code>create</code>、<code>list</code>、<code>revoke</code></td><td>租户作用域 API 密钥生命周期。</td></tr>
+        <tr><td><code>policy</code></td><td><code>allow-agent</code>、<code>deny-agent</code>、<code>allow-team</code>、<code>deny-team</code>、<code>require-approval</code>、<code>allow-classification</code>、<code>deny-classification</code>、<code>allow-tool</code>、<code>deny-tool</code></td><td>通过模板生成治理策略规则。</td></tr>
+        <tr><td><code>dlq</code></td><td><code>query</code>、<code>replay</code>、<code>discard</code></td><td>死信队列检视与恢复。</td></tr>
+        <tr><td><code>dashboard</code></td><td>—</td><td>交互式 TUI，监控任务、邮箱与 Agent。</td></tr>
+    </table>
+
+    <h3 id="cli-project">项目工作流</h3>
+    <p>项目命令以代码形式管理你的租户拓扑（详见<a href="#configure">配置</a>）：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span><span class="tok-d">                    </span><span class="tok-c"># 生成 janus.project.yaml</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">validate</span><span class="tok-d">                </span><span class="tok-c"># 检查文件是否有错误</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d">                     </span><span class="tok-c"># 预览与线上 API 的差异</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-n">--all-tenants</span><span class="tok-d">      </span><span class="tok-c"># 应用所有租户</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># 将线上资源拉回文件</span></code></pre>
+
+    <h3 id="cli-api-keys">API 密钥</h3>
+    <p>API 密钥按租户作用域划分。每个环境或服务创建一把，轮换时撤销旧密钥：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-c"># → jak_live_a1b2c3d4...  （请保存 —— 只显示一次）</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-c"># → jak_live_a1b2...  admin  created 2026-07-31</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-d">jak_live_a1b2</span></code></pre>
+
+    <h3 id="cli-tasks-mailboxes">任务与邮箱</h3>
+    <p>发布、拉取并确认任务 —— 与 SDK 封装的同一套生命周期，只是从命令行操作：</p>
+    <pre><code><span class="tok-c"># 向邮箱发布任务</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--source</span><span class="tok-d"> </span><span class="tok-d">product</span><span class="tok-d"> </span><span class="tok-n">--mailbox</span><span class="tok-d"> </span><span class="tok-d">review-mb</span>
+
+<span class="tok-c"># 查看任务状态</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">status</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-c"># 从邮箱拉取下一个任务</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">pull</span><span class="tok-d"> </span><span class="tok-d">review-mb</span><span class="tok-d"> </span><span class="tok-n">--agent</span><span class="tok-d"> </span><span class="tok-d">reviewer</span>
+
+<span class="tok-c"># 检视死信队列并重放</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">query</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">replay</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-dashboard">Dashboard</h3>
+    <p>启动交互式终端仪表盘，实时监控任务、邮箱与 Agent 健康状态：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dashboard</span><span class="tok-d"> </span><span class="tok-n">--server</span><span class="tok-d"> </span><span class="tok-d">http://localhost:8080</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h2 id="production">生产部署</h2>
     <p>对于 Kubernetes，Janus 提供 Helm chart，内置存活/就绪探针、迁移 Job 钩子、HPA、PDB 与 Prometheus 采集注解：</p>
     <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
     <p>完整的 chart values 与运维手册见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</p>
 
-    <h2>下一步</h2>
+    <h2 id="whats-next">下一步</h2>
     <ul>
         <li><a href="/zh/docs/concepts.html">阅读核心概念</a> — 理解邮箱、任务、租约与信封</li>
         <li><a href="/zh/docs/sdk.html">SDK 指南</a> — 使用 Go、Python 或 TypeScript SDK</li>
@@ -313,6 +534,8 @@
     </ul>
 
     <div class="note">Janus 默认<strong>开启鉴权</strong>。Compose 文件为本地便利设置了 <code>JANUS_AUTH_ENABLED=false</code>——在将 Janus 暴露到网络前，请重新开启（并通过 <code>janus api-key create</code> 创建 API 密钥）。</div>
+        </div>
+    </div>
 </div>
 
 <footer class="footer">
