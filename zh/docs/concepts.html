@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>核心概念 — Janus</title>
+    <meta name="description" content="理解 Janus 核心概念：邮箱、任务、租约、信封、路由、治理与协议网关。">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/app.js" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-mark.svg" alt="Janus" height="30">
+            <span>Janus</span>
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>核心概念</div>
+
+<div class="doc-content">
+    <span class="eyebrow">文档</span>
+    <h1>核心概念</h1>
+    <p>Janus 是一个持久化 Agent 任务代理（Broker）。它位于 Agent 之间，以治理、路由和可观测性保障任务的可靠交付。</p>
+
+    <div class="flow" aria-label="架构：生产者 Agent 与消费者 Agent 通过 Janus Broker 连接，底层由持久化的 PostgreSQL 与 NATS 存储支撑">
+        <div class="flow-row">
+            <div class="flow-node">
+                <div class="fn-ico">📡</div>
+                <div class="fn-name">Producer</div>
+                <div class="fn-sub">Agent</div>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node is-broker">
+                <div class="fn-ico">⚡</div>
+                <div class="fn-name">Janus</div>
+                <div class="fn-sub">Broker</div>
+            </div>
+            <div class="flow-arrow"></div>
+            <div class="flow-node">
+                <div class="fn-ico">🤖</div>
+                <div class="fn-name">Consumer</div>
+                <div class="fn-sub">Agent</div>
+            </div>
+        </div>
+        <div class="flow-drop"><span class="vd-line dashed"></span></div>
+        <div class="flow-hub-row">
+            <div class="flow-node">
+                <div class="fn-ico">🗄️</div>
+                <div class="fn-name">PostgreSQL + NATS</div>
+                <div class="fn-sub">持久化存储</div>
+            </div>
+        </div>
+    </div>
+
+    <h2>任务（Task）</h2>
+    <p>工作的基本单位。任务携带一个不透明载荷（<strong>信封 envelope</strong>），从源 Agent 发往目标消费者。每个任务都有唯一 ID、租户作用域，以及完整的生命周期状态：</p>
+    <pre><code><span class="tok-d">pending</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">claimed</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">in_progress</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">completed</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">failed</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">nacked</span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">pending</span><span class="tok-d"> </span><span class="tok-d">(</span><span class="tok-d">重试</span><span class="tok-d">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">→</span><span class="tok-d"> </span><span class="tok-d">dlq</span></code></pre>
+
+    <h2>邮箱（Mailbox）</h2>
+    <p>一个命名队列，任务在此投递。Agent 从自己拥有的邮箱拉取任务。邮箱是持久的——即使 Agent 崩溃，任务也会保留，直到 Agent 恢复并拉取它们。</p>
+    <p>关键属性：</p>
+    <ul>
+        <li>作用域限定在某个租户内</li>
+        <li>由一个或多个 Agent 拥有（agent_id）</li>
+        <li>任务按优先级顺序 FIFO 拉取</li>
+    </ul>
+
+    <h2>租约（Lease）</h2>
+    <p>Agent 拉取任务时，会获得一个限时租约。租约防止其他 Agent 抢占同一任务。如果 Agent 未确认（ACK）就崩溃：</p>
+    <ul>
+        <li>租约在配置的超时时间后过期</li>
+        <li>任务回到 <code>pending</code> 状态，可被其他 Agent 重新拉取</li>
+        <li>幂等的 ACK/NACK 确保精确一次（exactly-once）语义</li>
+    </ul>
+
+    <h2>信封（Envelope）</h2>
+    <p>载荷包装器。包含：</p>
+    <ul>
+        <li><code>type</code> — 消息类型标识</li>
+        <li><code>payload</code> — 实际数据（结构化 JSON）</li>
+        <li><code>priority</code> — high / normal / low</li>
+        <li><code>context_refs</code> — 对共享工件的引用（文件、图片、先前结果）</li>
+    </ul>
+
+    <h2>路由与能力解析</h2>
+    <p>Janus 支持两种派发模式：</p>
+    <ul>
+        <li><strong>直接路由</strong> — 发布到指定邮箱</li>
+        <li><strong>基于能力</strong> — 描述你的需求，Janus 自动找到最合适的 Agent</li>
+    </ul>
+    <p><strong>意图解析器（Intent Resolver）</strong>接受自然语言描述，并将其匹配到已注册的 Agent 能力：</p>
+    <pre><code><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">resolve_intent</span><span class="tok-d">(</span><span class="tok-s">&quot;Review a Go pull request for race conditions&quot;</span><span class="tok-d">)</span>
+<span class="tok-c"># → Confidence: 0.92</span>
+<span class="tok-c"># → Matched capability: &quot;go-code-review&quot;</span>
+<span class="tok-c"># → Suggested target: &quot;review-mb&quot;</span></code></pre>
+
+    <h2>治理（Governance）</h2>
+    <p>每一次任务派发都会经过策略与预算检查：</p>
+    <ul>
+        <li><strong>策略引擎</strong> — 谁能调用谁、使用什么数据形态</li>
+        <li><strong>预算控制</strong> — RPM / TPM / 并发 / 每日成本限制</li>
+        <li><strong>审计轨迹</strong> — 每一次 publish、pull、start、ack、nack 都被记录</li>
+        <li><strong>人工审批</strong> — 高风险任务可以要求手动审批</li>
+    </ul>
+
+    <h2>协议网关（Protocol Gateways）</h2>
+    <p>Janus 原生支持多种 Agent 通信协议：</p>
+    <ul>
+        <li><strong>A2A 网关</strong> — Google Agent-to-Agent 协议（Agent Card、Task Send）</li>
+        <li><strong>ACP 网关</strong> — Anthropic Communication Protocol（Manifest、Runs）</li>
+        <li><strong>MCP 网关</strong> — Model Context Protocol（Tools、Resources）</li>
+        <li><strong>REST API + gRPC</strong> — 面向 SDK 客户端的原生 Janus API</li>
+    </ul>
+
+    <h2>持久化模型（Durability Model）</h2>
+    <p>任务被双写至 PostgreSQL（真相源）与 NATS JetStream（快速投递）。如果 Broker 进程中途崩溃：</p>
+    <ul>
+        <li>已认领但未 ACK 的在途任务，其租约会过期</li>
+        <li>outbox 机制确保 Broker 崩溃期间不会丢失任何任务</li>
+        <li>可通过 CLI 从死信队列手动重放</li>
+    </ul>
+
+    <h2>租户隔离（Tenant Isolation）</h2>
+    <p>每个任务、邮箱和工件都限定在租户内。跨租户访问会被自动拒绝。所有审计事件都带有租户 ID 标签。</p>
+
+    <div class="note">Janus 使用<strong>双写持久化</strong>（PG + NATS）保障可靠性。Broker 能在 Agent 崩溃、网络分区乃至自身重启的情况下不丢失任何任务。</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-mark.svg" alt="Janus" height="26">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

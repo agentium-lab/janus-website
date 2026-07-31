@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Start — Janus</title>
-    <meta name="description" content="Get Janus running in 5 minutes. Publish, pull, and acknowledge your first agent task.">
+    <title>快速开始 — Janus</title>
+    <meta name="description" content="5 分钟跑起 Janus。发布、拉取并确认你的第一个 Agent 任务。" >
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css">
     <script src="/assets/app.js" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
 </head>
 <body>
 <div class="bg" aria-hidden="true">
@@ -18,21 +19,21 @@
 
 <nav class="navbar">
     <div class="nav-container">
-        <a href="/" class="nav-logo">
+        <a href="/zh/" class="nav-logo">
             <img src="/assets/janus-mark.svg" alt="Janus" height="30">
             <span>Janus</span>
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
             <span></span><span></span><span></span>
         </label>
         <div class="nav-links">
-            <a href="/docs/quickstart.html">Quick Start</a>
-            <a href="/docs/concepts.html">Concepts</a>
-            <a href="/docs/sdk.html">SDK</a>
-            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/zh/" class="lang-switch">中文</a>
+            <a href="/" class="lang-switch">English</a>
         </div>
     </div>
 </nav>
@@ -40,39 +41,39 @@
 <div class="doc-hero">
     <span class="doc-hero-glow" aria-hidden="true"></span>
 </div>
-<div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
+<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
 
 <div class="doc-content">
-    <span class="eyebrow">Documentation</span>
-    <h1>Quick Start</h1>
-    <p>Get Janus running locally and complete your first agent-to-agent task handoff in 5 minutes.</p>
+    <span class="eyebrow">文档</span>
+    <h1>快速开始</h1>
+    <p>在本地跑起 Janus，并在 5 分钟内完成第一个 Agent 到 Agent 的任务交接。</p>
 
-    <h2>Prerequisites</h2>
+    <h2>前置条件</h2>
     <ul>
-        <li>Docker &amp; Docker Compose</li>
-        <li>Python 3.10+ (for the SDK example)</li>
+        <li>Docker 与 Docker Compose</li>
+        <li>Python 3.10+（用于 SDK 示例）</li>
     </ul>
 
-    <h2>1. Start Janus</h2>
-    <p>The Compose file starts Janus server + PostgreSQL + NATS + Redis with a single command:</p>
+    <h2>1. 启动 Janus</h2>
+    <p>一条命令启动 Janus 服务端 + PostgreSQL + NATS + Redis（Compose 文件已配置好）：</p>
     <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span></code></pre>
-    <p>Verify all services are healthy:</p>
+    <p>验证所有服务健康：</p>
     <pre><code><span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">healthz</span>
 <span class="tok-c"># → {&quot;status&quot;:&quot;ok&quot;}</span></code></pre>
 
-    <h2>2. Install the Python SDK</h2>
+    <h2>2. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
-    <h2>3. Publish a Task</h2>
-    <p>Create a file <code>publish.py</code>:</p>
+    <h2>3. 发布一个任务</h2>
+    <p>创建文件 <code>publish.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
 
-<span class="tok-c"># Create a mailbox for the reviewer agent</span>
+<span class="tok-c"># 为审核 Agent 创建邮箱</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-o">=</span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-o">)</span>
 
-<span class="tok-c"># Publish a task to the mailbox</span>
+<span class="tok-c"># 向邮箱发布任务</span>
 <span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;id&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;task-001&quot;</span><span class="tok-o">,</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-o">,</span>
@@ -87,22 +88,22 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>4. Pull and Complete the Task</h2>
-    <p>Create a file <code>worker.py</code>:</p>
+    <h2>4. 拉取并完成任务</h2>
+    <p>创建文件 <code>worker.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
 
-<span class="tok-c"># Pull task from mailbox</span>
+<span class="tok-c"># 从邮箱拉取任务</span>
 <span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-o">)</span>
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-d">f</span><span class="tok-s">&quot;Got task: {result.task.id}&quot;</span><span class="tok-o">)</span>
 
-<span class="tok-c"># Start processing (acquire lease)</span>
+<span class="tok-c"># 开始处理（获取租约）</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">start_task</span><span class="tok-o">(</span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">lease</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">)</span>
 
-<span class="tok-c"># Process... (in real code, do the work here)</span>
+<span class="tok-c"># 处理中……（实际代码里在这里做真正的处理）</span>
 
-<span class="tok-c"># Acknowledge completion</span>
+<span class="tok-c"># 确认完成</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">{</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;lease_id&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">lease</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;result_ref&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;s3://review-result.json&quot;</span>
@@ -110,22 +111,22 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Task completed&quot;</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">worker</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
-    <h2>5. Verify via CLI</h2>
-    <p>Use the Janus CLI to check task state:</p>
+    <h2>5. 用 CLI 验证</h2>
+    <p>使用 Janus CLI 查看任务状态：</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>
 
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → review-mb  tasks: 1  pending: 0</span></code></pre>
 
-    <h2>What's Next</h2>
+    <h2>下一步</h2>
     <ul>
-        <li><a href="/docs/concepts.html">Read Core Concepts</a> — understand mailboxes, tasks, leases, and envelopes</li>
-        <li><a href="/docs/sdk.html">SDK Guide</a> — use Go, Python, or TypeScript SDKs</li>
-        <li><a href="/scenarios/code-review.html">Code Review Scenario</a> — multi-agent code review pipeline</li>
+        <li><a href="/zh/docs/concepts.html">阅读核心概念</a> — 理解邮箱、任务、租约与信封</li>
+        <li><a href="/zh/docs/sdk.html">SDK 指南</a> — 使用 Go、Python 或 TypeScript SDK</li>
+        <li><a href="/zh/scenarios/code-review.html">代码审核场景</a> — 多 Agent 代码审核流水线</li>
     </ul>
 
-    <div class="note">Janus runs with <strong>auth enabled by default</strong>. For local development without auth, set <code>AUTH_ENABLED=false</code> in your environment.</div>
+    <div class="note">Janus 默认<strong>开启鉴权</strong>。本地开发不需要鉴权时，在环境中设置 <code>AUTH_ENABLED=false</code>。</div>
 </div>
 
 <footer class="footer">
@@ -137,26 +138,26 @@
             </div>
             <div class="footer-links">
                 <div class="footer-col">
-                    <h4>Docs</h4>
-                    <a href="/docs/quickstart.html">Quick Start</a>
-                    <a href="/docs/concepts.html">Concepts</a>
-                    <a href="/docs/sdk.html">SDK Guide</a>
-                    <a href="/docs/api.html">API Reference</a>
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
                 </div>
                 <div class="footer-col">
-                    <h4>Scenarios</h4>
-                    <a href="/scenarios/code-review.html">Code Review</a>
-                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
                 </div>
                 <div class="footer-col">
-                    <h4>Community</h4>
+                    <h4>社区</h4>
                     <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
-                    <a href="/zh/">中文</a>
+                    <a href="/">English</a>
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
         </div>
     </div>
 </footer>

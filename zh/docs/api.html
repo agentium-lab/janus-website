@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 参考 — Janus</title>
+    <meta name="description" content="Janus API 参考：REST 端点、gRPC 服务、认证与错误处理。">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/app.js" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-mark.svg" alt="Janus" height="30">
+            <span>Janus</span>
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>API 参考</div>
+
+<div class="doc-content">
+    <span class="eyebrow">文档</span>
+    <h1>API 参考</h1>
+    <p>Janus 提供 HTTP REST 与 gRPC API。所有 SDK 都通过这些端点通信。</p>
+
+    <h2>基础 URL</h2>
+    <pre><code><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span></code></pre>
+    <p>所有请求都需要 <code>X-Tenant-ID</code> 请求头。需要认证的端点还要求 <code>Authorization: Bearer &lt;api_key&gt;</code> 请求头。</p>
+
+    <h2>REST 端点</h2>
+
+    <h3>健康与就绪</h3>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/healthz</span></div>
+        <div class="desc">存活探针。进程存活时返回 200。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/readyz</span></div>
+        <div class="desc">就绪探针。检查 PG、NATS、Redis 连通性，仅当所有依赖可访问时返回 200。</div>
+    </div>
+
+    <h3>邮箱</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes</span></div>
+        <div class="desc">创建邮箱。请求体：<code>{ "name": "review-mb", "agent_id": "reviewer" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div class="desc">获取邮箱详情与统计。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes</span></div>
+        <div class="desc">列出该租户下所有邮箱。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method delete">DELETE</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div class="desc">删除邮箱（必须为空）。</div>
+    </div>
+
+    <h3>任务</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks</span></div>
+        <div class="desc">发布任务。请求体：<code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes/{name}/pull</span></div>
+        <div class="desc">从邮箱拉取下一个待处理任务。请求体：<code>{ "agent_id": "reviewer" }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/start</span></div>
+        <div class="desc">开始处理任务。请求体：<code>{ "lease_id": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/ack</span></div>
+        <div class="desc">确认成功完成。请求体：<code>{ "lease_id": "...", "result_ref": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/nack</span></div>
+        <div class="desc">否定确认 — 回到队列或进入 DLQ。请求体：<code>{ "lease_id": "...", "reason": "..." }</code></div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/tasks/{id}</span></div>
+        <div class="desc">获取任务详情与当前状态。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/tasks</span></div>
+        <div class="desc">列出任务，支持可选过滤（状态、邮箱、来源）。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/replay</span></div>
+        <div class="desc">将任务从 DLQ 重放回 pending 状态。</div>
+    </div>
+
+    <h3>意图解析</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/intent/resolve</span></div>
+        <div class="desc">将自然语言解析为能力。请求体：<code>{ "query": "Review Go code for bugs", "tenant_id": "acme" }</code></div>
+    </div>
+
+    <h3>工件（Artifacts）</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/api/v1/artifacts</span></div>
+        <div class="desc">上传工件。Multipart 表单，带租户隔离。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/api/v1/artifacts/{id}</span></div>
+        <div class="desc">下载工件（租户作用域访问检查）。</div>
+    </div>
+
+    <h2>错误格式</h2>
+    <p>所有错误都返回标准信封：</p>
+    <pre><code><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;error&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;code&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;TENANT_MISMATCH&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;message&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;Cross-tenant access denied&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;details&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;request_tenant&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;acme&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;resource_tenant&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;evil-corp&quot;</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">}</span>
+<span class="tok-d">}</span></code></pre>
+
+    <table>
+        <tr><th>HTTP 状态</th><th>错误码</th><th>描述</th></tr>
+        <tr><td>400</td><td>INVALID_REQUEST</td><td>请求体格式错误</td></tr>
+        <tr><td>401</td><td>UNAUTHENTICATED</td><td>缺少或无效的 API 密钥</td></tr>
+        <tr><td>403</td><td>TENANT_MISMATCH</td><td>跨租户访问被拒绝</td></tr>
+        <tr><td>403</td><td>POLICY_DENIED</td><td>治理策略阻止了该操作</td></tr>
+        <tr><td>404</td><td>NOT_FOUND</td><td>资源不存在</td></tr>
+        <tr><td>409</td><td>LEASE_EXPIRED</td><td>任务租约已过期，需要重新拉取</td></tr>
+        <tr><td>429</td><td>RATE_LIMITED</td><td>超出预算或并发限制</td></tr>
+        <tr><td>500</td><td>INTERNAL</td><td>服务器错误</td></tr>
+    </table>
+
+    <h2>认证</h2>
+    <p>Janus 支持两种认证模式：</p>
+    <ul>
+        <li><strong>API 密钥</strong>（默认，已启用）— 通过 <code>Authorization: Bearer &lt;key&gt;</code> 请求头传递</li>
+        <li><strong>mTLS</strong> — 使用客户端证书的双向 TLS</li>
+    </ul>
+    <p>API 密钥按租户作用域划分。通过 CLI 创建与撤销密钥：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">auth</span><span class="tok-d"> </span><span class="tok-d">create-key</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--role</span><span class="tok-d"> </span><span class="tok-d">admin</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">auth</span><span class="tok-d"> </span><span class="tok-d">revoke-key</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--key-id</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-d">lt</span><span class="tok-d">;</span><span class="tok-d">id</span><span class="tok-o">&amp;</span><span class="tok-d">gt</span><span class="tok-d">;</span></code></pre>
+
+    <div class="note">完整的 protobuf 服务定义与 gRPC reflection 已在服务端开放。proto 文件见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-mark.svg" alt="Janus" height="26">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDK 指南 — Janus</title>
+    <meta name="description" content="Janus Go、Python、TypeScript SDK 文档。客户端配置、发布、拉取与完成任务。">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/app.js" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-mark.svg" alt="Janus" height="30">
+            <span>Janus</span>
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>SDK 指南</div>
+
+<div class="doc-content">
+    <span class="eyebrow">文档</span>
+    <h1>SDK 指南</h1>
+    <p>Janus 提供 Go、Python 与 TypeScript 的一等公民 SDK。三者实现相同的核心操作：创建邮箱、发布任务、拉取任务、确认完成。</p>
+
+    <h2>Go SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>安装</strong></p>
+        <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">get</span><span class="tok-d"> </span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-sdk-go</span></code></pre>
+
+        <p><strong>创建客户端</strong></p>
+        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-s">&quot;github.com/agentium-lab/janus-sdk-go/janus&quot;</span>
+
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">:</span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">NewClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">WithTenant</span><span class="tok-o">(</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span><span class="tok-o">)</span></code></pre>
+
+        <p><strong>关键方法（共 39 个）</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">CreateMailbox</div><div class="method-desc">创建邮箱</div></div>
+            <div class="method-item"><div class="method-name">PublishTask</div><div class="method-desc">发布任务</div></div>
+            <div class="method-item"><div class="method-name">PullTask</div><div class="method-desc">拉取下一个任务</div></div>
+            <div class="method-item"><div class="method-name">StartTask</div><div class="method-desc">获取租约</div></div>
+            <div class="method-item"><div class="method-name">AckTask</div><div class="method-desc">完成任务</div></div>
+            <div class="method-item"><div class="method-name">NackTask</div><div class="method-desc">失败并重试</div></div>
+            <div class="method-item"><div class="method-name">ListTasks</div><div class="method-desc">查询任务</div></div>
+            <div class="method-item"><div class="method-name">ResolveIntent</div><div class="method-desc">自然语言 → 能力</div></div>
+        </div>
+        <pre><code><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">发布任务</span>
+<span class="tok-d">resp</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">err</span><span class="tok-d"> </span><span class="tok-o">:</span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">PublishTask</span><span class="tok-d">(</span><span class="tok-d">ctx</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-d">amp</span><span class="tok-d">;</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">PublishRequest</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">SourceAgent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">TargetType</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">TargetValue</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Envelope</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">Envelope</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Type</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Payload</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">json</span><span class="tok-o">.</span><span class="tok-d">RawMessage</span><span class="tok-d">(</span><span class="tok-d">`</span><span class="tok-d">{</span><span class="tok-s">&quot;pr_url&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;...&quot;</span><span class="tok-d">}</span><span class="tok-d">`</span><span class="tok-d">)</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
+    </div>
+
+    <h2>Python SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>安装</strong></p>
+        <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
+
+        <p><strong>创建客户端</strong></p>
+        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span></code></pre>
+
+        <p><strong>关键方法（共 34 个）</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">create_mailbox</div><div class="method-desc">创建邮箱</div></div>
+            <div class="method-item"><div class="method-name">publish_task</div><div class="method-desc">发布任务</div></div>
+            <div class="method-item"><div class="method-name">pull_task</div><div class="method-desc">拉取下一个任务</div></div>
+            <div class="method-item"><div class="method-name">start_task</div><div class="method-desc">开始处理并获取租约</div></div>
+            <div class="method-item"><div class="method-name">ack_task</div><div class="method-desc">确认完成</div></div>
+            <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">否定确认</div></div>
+            <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">列出/过滤任务</div></div>
+            <div class="method-item"><div class="method-name">resolve_intent</div><div class="method-desc">解析意图</div></div>
+        </div>
+        <pre><code><span class="tok-c"># 创建邮箱</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">create_mailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-o">=</span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d">)</span>
+
+<span class="tok-c"># 发布任务</span>
+<span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;id&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;task-001&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_value&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;envelope&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">&quot;type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">&quot;payload&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-d">}</span><span class="tok-d">}</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
+    </div>
+
+    <h2>TypeScript SDK</h2>
+    <div class="sdk-tab">
+        <p><strong>安装</strong></p>
+        <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium</span><span class="tok-o">/</span><span class="tok-d">janus-sdk</span></code></pre>
+
+        <p><strong>创建客户端</strong></p>
+        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-s">&quot;@agentium/janus-sdk&quot;</span><span class="tok-d">;</span>
+<span class="tok-d">const</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">new</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-d">tenantId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;acme&quot;</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span><span class="tok-d">;</span></code></pre>
+
+        <p><strong>关键方法（共 30 个）</strong></p>
+        <div class="method-grid">
+            <div class="method-item"><div class="method-name">createMailbox</div><div class="method-desc">创建邮箱</div></div>
+            <div class="method-item"><div class="method-name">publishTask</div><div class="method-desc">发布任务</div></div>
+            <div class="method-item"><div class="method-name">pullTask</div><div class="method-desc">拉取下一个任务</div></div>
+            <div class="method-item"><div class="method-name">startTask</div><div class="method-desc">开始处理并获取租约</div></div>
+            <div class="method-item"><div class="method-name">ackTask</div><div class="method-desc">确认完成</div></div>
+            <div class="method-item"><div class="method-name">nackTask</div><div class="method-desc">否定确认</div></div>
+            <div class="method-item"><div class="method-name">listTasks</div><div class="method-desc">列出/过滤任务</div></div>
+            <div class="method-item"><div class="method-name">resolveIntent</div><div class="method-desc">解析意图</div></div>
+        </div>
+        <pre><code><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">创建邮箱</span>
+<span class="tok-d">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">createMailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">agentId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>
+
+<span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">发布任务</span>
+<span class="tok-d">const</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">publishTask</span><span class="tok-d">(</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;task-001&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">sourceAgent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetType</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetValue</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">envelope</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">type</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">payload</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-d">}</span><span class="tok-d"> </span><span class="tok-d">}</span>
+<span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span></code></pre>
+    </div>
+
+    <h2>CLI</h2>
+    <p>Janus CLI 提供终端下的任务与邮箱管理：</p>
+    <pre><code><span class="tok-c"># 任务操作</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">get</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">replay</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-c"># 邮箱操作</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">inspect</span><span class="tok-d"> </span><span class="tok-d">review-mb</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-c"># 系统</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">status</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">version</span></code></pre>
+
+    <div class="note">三个 SDK 都支持 HTTP 与 gRPC 传输，并遵循相同的错误信封格式。运维操作请使用 CLI —— 从 DLQ 重放、检查邮箱深度、查看系统健康状态。</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-mark.svg" alt="Janus" height="26">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

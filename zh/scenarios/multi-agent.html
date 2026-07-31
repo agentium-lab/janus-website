@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多 Agent 框架集成 — Janus 场景</title>
+    <meta name="description" content="将 Janus 与 LangGraph、AutoGen、CrewAI 和 GitHub Actions 集成，实现生产环境可靠的多 Agent 协作。">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/app.js" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-mark.svg" alt="Janus" height="30">
+            <span>Janus</span>
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>场景<span>›</span>多 Agent 框架集成</div>
+
+<div class="doc-content">
+    <span class="eyebrow">场景</span>
+    <h1>多 Agent 框架集成</h1>
+    <p>Janus 与框架无关。它为使用不同框架构建的 Agent 提供任务代理服务——LangGraph、AutoGen、CrewAI、GitHub Actions、Claude Code 或自定义实现——全部经由同一条持久化主干。</p>
+
+    <div class="flow" aria-label="LangGraph、AutoGen、CrewAI 与 GitHub Actions Agent 全部经由中央 Janus Broker 路由">
+        <div class="flow-row">
+            <div class="flow-node"><div class="fn-name">LangGraph</div><div class="fn-sub">Agent</div></div>
+            <div class="flow-node"><div class="fn-name">AutoGen</div><div class="fn-sub">Agent</div></div>
+            <div class="flow-node"><div class="fn-name">CrewAI</div><div class="fn-sub">Agent</div></div>
+            <div class="flow-node"><div class="fn-name">GitHub</div><div class="fn-sub">Actions</div></div>
+        </div>
+        <div class="flow-drop"><span class="vd-line dashed"></span></div>
+        <div class="flow-hub-row">
+            <div class="flow-node is-broker"><div class="fn-ico">⚡</div><div class="fn-name">Janus</div><div class="fn-sub">Broker</div></div>
+        </div>
+    </div>
+
+    <h2>LangGraph 集成</h2>
+    <div class="framework-card">
+        <p>LangGraph Agent 将任务发布到 Janus 邮箱，并从下游 Agent 拉取结果。Janus 节点充当图步骤之间可靠的交接点：</p>
+        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">langgraph</span><span class="tok-o">.</span><span class="tok-d">graph</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">StateGraph</span>
+<span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://janus:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
+
+<span class="tok-k">class</span><span class="tok-d"> </span><span class="tok-f">AgentState</span><span class="tok-o">(</span><span class="tok-t">TypedDict</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">pr_url</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">str</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">review_result</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">dict</span>
+
+<span class="tok-k">def</span><span class="tok-d"> </span><span class="tok-f">review_node</span><span class="tok-o">(</span><span class="tok-d">state</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">AgentState</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;langgraph-review&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_value&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;envelope&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">&quot;type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;payload&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">state</span><span class="tok-o">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">return</span><span class="tok-d"> </span><span class="tok-d">state</span>
+
+<span class="tok-k">def</span><span class="tok-d"> </span><span class="tok-f">collect_node</span><span class="tok-o">(</span><span class="tok-d">state</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">AgentState</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">&quot;langgraph-collect-mb&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;collector&quot;</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">return</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">&quot;review_result&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">envelope</span><span class="tok-o">.</span><span class="tok-d">payload</span><span class="tok-o">}</span>
+
+<span class="tok-d">graph</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">StateGraph</span><span class="tok-o">(</span><span class="tok-t">AgentState</span><span class="tok-o">)</span>
+<span class="tok-d">graph</span><span class="tok-o">.</span><span class="tok-f">add_node</span><span class="tok-o">(</span><span class="tok-d">review_node</span><span class="tok-o">)</span>
+<span class="tok-d">graph</span><span class="tok-o">.</span><span class="tok-f">add_node</span><span class="tok-o">(</span><span class="tok-d">collect_node</span><span class="tok-o">)</span>
+<span class="tok-d">graph</span><span class="tok-o">.</span><span class="tok-f">add_edge</span><span class="tok-o">(</span><span class="tok-s">&quot;review_node&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;collect_node&quot;</span><span class="tok-o">)</span></code></pre>
+        <p>LangGraph 负责编排图；Janus 确保任务在 Agent 重启后依然存活，并在步骤之间提供治理。</p>
+    </div>
+
+    <h2>AutoGen 集成</h2>
+    <div class="framework-card">
+        <p>AutoGen Agent 将 Janus 用作异步团队协作的消息总线：</p>
+        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">autogen</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">AssistantAgent</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-t">UserProxyAgent</span>
+<span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://janus:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
+
+<span class="tok-k">class</span><span class="tok-d"> </span><span class="tok-f">JanusAgent</span><span class="tok-o">(</span><span class="tok-t">AssistantAgent</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-s">&quot;通过 Janus 收发消息的 AutoGen Agent。&quot;</span><span class="tok-s">&quot;&quot;</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">def</span><span class="tok-d"> </span><span class="tok-f">send</span><span class="tok-o">(</span><span class="tok-d">self</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">message</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">recipient</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">*</span><span class="tok-o">*</span><span class="tok-d">kwargs</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">self</span><span class="tok-o">.</span><span class="tok-d">name</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_value&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">f</span><span class="tok-s">&quot;{recipient}-mb&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;envelope&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">&quot;type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;autogen_msg&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;payload&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">message</span><span class="tok-o">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">def</span><span class="tok-d"> </span><span class="tok-f">receive</span><span class="tok-o">(</span><span class="tok-d">self</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">message</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">sender</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">*</span><span class="tok-o">*</span><span class="tok-d">kwargs</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 消息经由持久化邮箱到达</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># Agent 就绪时拉取</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-d">f</span><span class="tok-s">&quot;{self.name}-mb&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">self</span><span class="tok-o">.</span><span class="tok-d">name</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">return</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">envelope</span><span class="tok-o">.</span><span class="tok-d">payload</span>
+
+<span class="tok-c"># 基于 Janus 骨干的 AutoGen 团队</span>
+<span class="tok-d">reviewer</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusAgent</span><span class="tok-o">(</span><span class="tok-d">name</span><span class="tok-o">=</span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">llm_config</span><span class="tok-o">=</span><span class="tok-d">llm_config</span><span class="tok-o">)</span>
+<span class="tok-d">coder</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusAgent</span><span class="tok-o">(</span><span class="tok-d">name</span><span class="tok-o">=</span><span class="tok-s">&quot;coder&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">llm_config</span><span class="tok-o">=</span><span class="tok-d">llm_config</span><span class="tok-o">)</span></code></pre>
+    </div>
+
+    <h2>CrewAI 集成</h2>
+    <div class="framework-card">
+        <p>CrewAI Agent 使用 Janus 在团队成员之间持久化交接任务：</p>
+        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">crewai</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">Agent</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-t">Task</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-t">Crew</span>
+<span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://janus:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
+
+<span class="tok-k">class</span><span class="tok-d"> </span><span class="tok-f">JanusCrewAgent</span><span class="tok-o">(</span><span class="tok-t">Agent</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-s">&quot;带 Janus 任务队列的 CrewAI Agent。&quot;</span><span class="tok-s">&quot;&quot;</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">def</span><span class="tok-d"> </span><span class="tok-f">execute_task</span><span class="tok-o">(</span><span class="tok-d">self</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">context</span><span class="tok-o">=</span><span class="tok-k">None</span><span class="tok-o">)</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 向 Janus 发布任务，交给下一位成员</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">self</span><span class="tok-o">.</span><span class="tok-d">role</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_value&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">f</span><span class="tok-s">&quot;{task.agent.role}-mb&quot;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;envelope&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">&quot;type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;crewai_task&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&quot;payload&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">description</span><span class="tok-o">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># 从自己的邮箱拉取结果</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-d">f</span><span class="tok-s">&quot;{self.role}-mb&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">self</span><span class="tok-o">.</span><span class="tok-d">role</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">return</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">envelope</span><span class="tok-o">.</span><span class="tok-d">payload</span>
+
+<span class="tok-c"># 具备 Janus 弹性的 Crew</span>
+<span class="tok-d">crew</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">Crew</span><span class="tok-o">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">agents</span><span class="tok-o">=</span><span class="tok-o">[</span><span class="tok-d">reviewer</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">coder</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tester</span><span class="tok-o">]</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tasks</span><span class="tok-o">=</span><span class="tok-o">[</span><span class="tok-d">review_task</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">code_task</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">test_task</span><span class="tok-o">]</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">process</span><span class="tok-o">=</span><span class="tok-t">Process</span><span class="tok-o">.</span><span class="tok-d">sequential</span>
+<span class="tok-o">)</span></code></pre>
+    </div>
+
+    <h2>GitHub Actions 集成</h2>
+    <div class="framework-card">
+        <p>GitHub Actions 触发 Janus 工作流并等待 Agent 结果：</p>
+        <pre><code><span class="tok-c"># .github/workflows/agent-review.yml</span>
+<span class="tok-d">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">Agent</span><span class="tok-d"> </span><span class="tok-t">Code</span><span class="tok-d"> </span><span class="tok-t">Review</span>
+<span class="tok-d">on</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">[</span><span class="tok-d">pull_request</span><span class="tok-o">]</span>
+
+<span class="tok-d">jobs</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">review</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">runs</span><span class="tok-o">-</span><span class="tok-d">on</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">ubuntu</span><span class="tok-o">-</span><span class="tok-d">latest</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">steps</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-d">uses</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">actions</span><span class="tok-o">/</span><span class="tok-d">checkout</span><span class="tok-d">@</span><span class="tok-d">v4</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-d">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">Request</span><span class="tok-d"> </span><span class="tok-t">AI</span><span class="tok-d"> </span><span class="tok-d">review</span><span class="tok-d"> </span><span class="tok-d">via</span><span class="tok-d"> </span><span class="tok-t">Janus</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">run</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">|</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">-</span><span class="tok-d">sdk</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">python</span><span class="tok-d"> </span><span class="tok-o">-</span><span class="tok-d">c</span><span class="tok-d"> </span><span class="tok-s">&quot;</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&#x27;${{ secrets.JANUS_URL }}&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">api_key</span><span class="tok-o">=</span><span class="tok-s">&#x27;${{ secrets.JANUS_API_KEY }}&#x27;</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;source_agent&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&#x27;github-actions&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;target_type&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&#x27;mailbox&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;target_value&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&#x27;review-mb&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;envelope&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;type&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&#x27;pr_review&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&#x27;payload&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">&#x27;pr&#x27;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&#x27;${{ github.event.pull_request.html_url }}&#x27;</span><span class="tok-o">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">}</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;</span>
+
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-d">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-t">Wait</span><span class="tok-d"> </span><span class="tok-k">for</span><span class="tok-d"> </span><span class="tok-d">review</span><span class="tok-d"> </span><span class="tok-d">result</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">run</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">|</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">python</span><span class="tok-d"> </span><span class="tok-o">-</span><span class="tok-d">c</span><span class="tok-d"> </span><span class="tok-s">&quot;</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">time</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&#x27;${{ secrets.JANUS_URL }}&#x27;</span><span class="tok-o">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">api_key</span><span class="tok-o">=</span><span class="tok-s">&#x27;${{ secrets.JANUS_API_KEY }}&#x27;</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">while</span><span class="tok-d"> </span><span class="tok-k">True</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">&#x27;github-results-mb&#x27;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">&#x27;github-actions&#x27;</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">if</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">:</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&#x27;Review complete:&#x27;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">result</span><span class="tok-o">.</span><span class="tok-d">task</span><span class="tok-o">.</span><span class="tok-d">envelope</span><span class="tok-o">.</span><span class="tok-d">payload</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-k">break</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">time</span><span class="tok-o">.</span><span class="tok-f">sleep</span><span class="tok-o">(</span><span class="tok-n">5</span><span class="tok-o">)</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;</span></code></pre>
+    </div>
+
+    <h2>Janus 提供的能力</h2>
+    <ul>
+        <li><strong>持久性</strong> — 任务在所有框架中都能经受 Agent 崩溃</li>
+        <li><strong>治理</strong> — 无论框架如何，统一执行策略与预算</li>
+        <li><strong>审计</strong> — 单一 trace ID 实现跨框架可追踪</li>
+        <li><strong>协议桥接</strong> — LangGraph Agent 可以无缝交接给 AutoGen Agent</li>
+        <li><strong>可观测性</strong> — 覆盖整个 Agent 网络的 Prometheus 指标与 OTel 追踪</li>
+    </ul>
+
+    <div class="note">你不需要只选一个框架。Janus 让你自由混搭——用 LangGraph 处理复杂 DAG 编排、AutoGen 处理对话式团队、GitHub Actions 处理 CI 触发。它们都通过 Janus 邮箱互操作。</div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-mark.svg" alt="Janus" height="26">
+                <span>Janus</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
