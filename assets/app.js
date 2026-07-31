@@ -447,6 +447,32 @@
     }, { passive: true });
   }
 
+  /* ---------- sidebar TOC scroll-spy ---------- */
+  function initTocSpy() {
+    var toc = doc.getElementById('doc-toc');
+    if (!toc) return;
+    var map = [];
+    var links = toc.querySelectorAll('a[href^="#"]');
+    Array.prototype.forEach.call(links, function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var target = doc.getElementById(id);
+      if (target) map.push({ a: a, el: target });
+    });
+    if (!map.length) return;
+    function setActive() {
+      var marker = 0;
+      var pos = window.scrollY + 140;
+      for (var i = 0; i < map.length; i++) {
+        if (map[i].el.offsetTop <= pos) marker = i;
+      }
+      for (var j = 0; j < map.length; j++) {
+        map[j].a.classList.toggle('active', j === marker);
+      }
+    }
+    window.addEventListener('scroll', setActive, { passive: true });
+    setActive();
+  }
+
   /* ---------- boot ---------- */
   // defer script: DOM is fully parsed by now, init immediately to avoid FOUC
   initParticles();
@@ -457,4 +483,5 @@
   initParallax();
   initNavbar();
   initToTop();
+  initTocSpy();
 })();
