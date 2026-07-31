@@ -62,6 +62,7 @@
             <li><a href="#verify-cli">8. CLI 验证</a></li>
             <li><a href="#cli-reference">CLI 参考</a></li>
             <li><a href="#production">生产部署</a></li>
+            <li><a href="#distributed">分布式部署</a></li>
             <li><a href="#whats-next">下一步</a></li>
         </ul>
     </aside>
@@ -535,6 +536,61 @@
     <p>对于 Kubernetes，Janus 提供 Helm chart，内置存活/就绪探针、迁移 Job 钩子、HPA、PDB 与 Prometheus 采集注解：</p>
     <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
     <p>完整的 chart values 与运维手册见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</p>
+
+    <h2 id="distributed">分布式部署</h2>
+    <p>Janus Core 是无状态计算节点 —— 所有持久状态都外部化到 PostgreSQL、NATS JetStream 与 Redis。你可以横向运行多个副本，任意副本都能处理任意请求；单个副本崩溃不会丢失业务状态，流量在前端负载均衡后面均摊。</p>
+
+    <figure class="arch-diagram">
+        <div class="arch-layer">
+            <div class="arch-box arch-box-entry">负载均衡 / Ingress</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-core">
+                Janus Core（无状态）
+                <div class="arch-replicas">
+                    <span class="arch-pill">#1</span>
+                    <span class="arch-pill">#2</span>
+                    <span class="arch-pill">…</span>
+                    <span class="arch-pill">#N</span>
+                </div>
+                <div class="arch-tag">HPA · 2–10 副本</div>
+            </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-state">PostgreSQL<small>持久状态</small></div>
+            <div class="arch-box arch-box-state">NATS JetStream<small>事件 / 消息</small></div>
+            <div class="arch-box arch-box-state">Redis<small>速率 / 缓存</small></div>
+        </div>
+        <figcaption class="arch-caption">计算层无状态、可水平扩展；状态全部外部化到 PG / NATS / Redis。</figcaption>
+    </figure>
+
+    <p>多副本并行消费 outbox 事件时，靠数据库级租约互斥，做到既不重复投递也不丢事件。迁移 <code>000011_outbox_worker_lease</code> 给 <code>outbox_events</code> 表加了租约字段，<code>000012_outbox_dedupe_key</code> 加了幂等去重键：</p>
+    <pre><code>locked_by        text         -- 抢占该行的 worker
+locked_at        timestamptz
+lease_expires_at timestamptz  -- 到期后被其他 worker 回收
+dedupe_key       text         -- (tenant_id, dedupe_key) 唯一，防重复投递</code></pre>
+    <p>某个副本崩溃后，它持有的行在租约到期时由存活副本接管；<code>dedupe_key</code> 保证重试与并发调度不会重复插入同一次投递。</p>
+
+    <h3 id="distributed-scaling">水平扩展计算层</h3>
+    <p>Helm chart 默认启用 HorizontalPodAutoscaler，按 CPU / 内存自动扩缩：</p>
+    <pre><code><span class="tok-p">autoscaling</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d">  </span><span class="tok-p">minReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2</span>
+<span class="tok-d">  </span><span class="tok-p">maxReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">10</span>
+<span class="tok-d">  </span><span class="tok-p">targetCPUUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">70</span>
+<span class="tok-d">  </span><span class="tok-p">targetMemoryUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">80</span></code></pre>
+    <p>同时配了 PodDisruptionBudget（<code>minAvailable: 1</code>），滚动更新与节点维护期间始终至少一个副本可用。</p>
+
+    <h3 id="distributed-state">扩展状态层</h3>
+    <p>计算层水平扩展时，状态层各自按自己的方式扩展：</p>
+    <ul>
+        <li><strong>PostgreSQL</strong> — 单主即可承载 Janus 的工作负载；更高吞吐可用 PgBouncer 连接池，读多写少时加只读副本。</li>
+        <li><strong>NATS JetStream</strong> — 原生支持集群与 RAFT 共识，按需水平扩展 JetStream 节点即可提升消息吞吐与容错。</li>
+        <li><strong>Redis</strong> — 单实例通常够用；需要更高可用时用 Redis Cluster 或哨兵（Sentinel）。</li>
+    </ul>
+    <div class="note">Janus Core 容器以 <code>readOnlyRootFilesystem</code> 运行，唯一持久卷只用于产物落盘（<code>artifacts</code>）—— 不含任何运行态，因此副本是无状态、可随时替换的。</div>
 
     <h2 id="whats-next">下一步</h2>
     <ul>
