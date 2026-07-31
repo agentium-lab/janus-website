@@ -1,0 +1,19 @@
+<svg width="256" height="256" viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Janus mark</title>
+  <desc id="desc">Two rounded Agent portals connected through a governed Janus routing node.</desc>
+  <defs>
+    <linearGradient id="janusMarkOuter" x1="20" y1="31" x2="240" y2="151" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FB7185"/>
+      <stop offset="0.5" stop-color="#FB923C"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="janusMarkInner" x1="46" y1="129" x2="214" y2="51" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <path d="M116 29H73C42 29 20 54 20 90C20 126 42 151 73 151H116M144 29H187C218 29 240 54 240 90C240 126 218 151 187 151H144" fill="none" stroke="url(#janusMarkOuter)" stroke-width="17" stroke-linecap="round"/>
+  <path d="M112 51H78C60 51 46 67 46 90C46 113 60 129 78 129H112M148 51H182C200 51 214 67 214 90C214 113 200 129 182 129H148" fill="none" stroke="url(#janusMarkInner)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M91 90H117M143 90H169" fill="none" stroke="#172033" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="130" cy="90" r="10" fill="none" stroke="#172033" stroke-width="6"/>
+</svg>
