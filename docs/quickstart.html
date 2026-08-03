@@ -262,7 +262,6 @@
 <span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span><span class="tok-c"># tokens per minute</span>
-<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span><span class="tok-c"># daily cost cap</span>
 <span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
@@ -336,8 +335,8 @@
         <tr><td><code>rpm</code></td><td>Max requests per minute.</td></tr>
         <tr><td><code>tpm</code></td><td>Max tokens per minute.</td></tr>
         <tr><td><code>concurrency</code></td><td>Max concurrent operations.</td></tr>
-        <tr><td><code>daily_usd</code></td><td>Daily cost cap in USD (estimated; enforcement in progress).</td></tr>
-        <tr><td><code>monthly_usd</code></td><td>Monthly cost cap in USD.</td></tr>
+        <tr><td><code>daily_usd</code></td><td><em>Planned.</em> Not yet enforced — awaiting trusted token metering.</td></tr>
+        <tr><td><code>monthly_usd</code></td><td><em>Planned.</em> Not yet enforced — awaiting trusted token metering.</td></tr>
     </table>
     <p>Budget scopes: <code>tenant</code> (whole tenant), <code>teams.&lt;id&gt;</code>, <code>agents.&lt;id&gt;</code>, <code>models.&lt;id&gt;</code>, <code>model_providers.&lt;id&gt;</code>, <code>tasks.&lt;id&gt;</code>.</p>
 
@@ -389,14 +388,12 @@
 <span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span>
-<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span>
 <span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
 <span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
 <span class="tok-d">        </span><span class="tok-p">sre</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
-<span class="tok-d">          </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
 <span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-d">   </span><span class="tok-c"># require human approval</span>

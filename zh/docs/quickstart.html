@@ -263,7 +263,6 @@
 <span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span><span class="tok-c"># 每分钟 token 数</span>
-<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span><span class="tok-c"># 每日成本上限</span>
 <span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
@@ -337,8 +336,8 @@
         <tr><td><code>rpm</code></td><td>每分钟最大请求数。</td></tr>
         <tr><td><code>tpm</code></td><td>每分钟最大 token 数。</td></tr>
         <tr><td><code>concurrency</code></td><td>最大并发操作数。</td></tr>
-        <tr><td><code>daily_usd</code></td><td>每日成本上限（美元，估算值；强制执行开发中）。</td></tr>
-        <tr><td><code>monthly_usd</code></td><td>每月成本上限（美元）。</td></tr>
+        <tr><td><code>daily_usd</code></td><td><em>规划中。</em>暂未强制执行——待可信 token 计量落地。</td></tr>
+        <tr><td><code>monthly_usd</code></td><td><em>规划中。</em>暂未强制执行——待可信 token 计量落地。</td></tr>
     </table>
     <p>预算作用域：<code>tenant</code>（整个租户）、<code>teams.&lt;id&gt;</code>、<code>agents.&lt;id&gt;</code>、<code>models.&lt;id&gt;</code>、<code>model_providers.&lt;id&gt;</code>、<code>tasks.&lt;id&gt;</code>。</p>
 
@@ -390,14 +389,12 @@
 <span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span>
-<span class="tok-d">        </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">500</span>
 <span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
 <span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
 <span class="tok-d">        </span><span class="tok-p">sre</span><span class="tok-o">:</span>
 <span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
-<span class="tok-d">          </span><span class="tok-p">daily_usd</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
 <span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
 <span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
 <span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-d">   </span><span class="tok-c"># 需要人工审批</span>
