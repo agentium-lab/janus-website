@@ -248,7 +248,7 @@
     <ul>
         <li>The lease expires after the configured timeout</li>
         <li>The task reverts to <code>pending</code> and becomes available for another agent to pull</li>
-        <li>Idempotent ACK/NACK ensures exactly-once semantics</li>
+        <li>Idempotent ACK/NACK delivers at-least-once with no duplicate processing</li>
     </ul>
 
     <h2>Envelope</h2>
@@ -266,17 +266,13 @@
         <li><strong>Direct</strong> — publish to a specific mailbox</li>
         <li><strong>Capability-based</strong> — describe what you need, Janus finds the best agent</li>
     </ul>
-    <p>The <strong>Intent Resolver</strong> accepts natural language descriptions and matches them to registered agent capabilities:</p>
-    <pre><code>client.resolve_intent("Review a Go pull request for race conditions")
-# → Confidence: 0.92
-# → Matched capability: "go-code-review"
-# → Suggested target: "review-mb"</code></pre>
+    <p><em>Roadmap (v1.1.0):</em> A natural-language <strong>Intent Resolver</strong> will match free-text requests to registered agent capabilities. Today, dispatch is <strong>direct</strong> (publish to a specific mailbox) or <strong>capability-based</strong> via structured capability lookup.</p>
 
     <h2>Governance</h2>
     <p>Every task dispatch passes through policy and budget checks:</p>
     <ul>
         <li><strong>Policy Engine</strong> — who can call whom, with what data shape</li>
-        <li><strong>Budget Control</strong> — RPM / TPM / concurrency / daily cost limits</li>
+        <li><strong>Budget Control</strong> — RPM / TPM / concurrency limits (cost tracking is estimated, based on agent-reported usage)</li>
         <li><strong>Audit Trail</strong> — every publish, pull, start, ack, nack is recorded</li>
         <li><strong>Human Approval</strong> — high-risk tasks can require manual approval</li>
     </ul>
@@ -285,7 +281,7 @@
     <p>Janus speaks multiple agent communication protocols natively:</p>
     <ul>
         <li><strong>A2A Gateway</strong> — Google Agent-to-Agent protocol (Agent Card, Task Send)</li>
-        <li><strong>ACP Gateway</strong> — Anthropic Communication Protocol (Manifest, Runs)</li>
+        <li><strong>ACP Gateway</strong> — Agent Communication Protocol by IBM/BeeAI (Manifest, Runs; now merged into A2A)</li>
         <li><strong>MCP Gateway</strong> — Model Context Protocol (Tools, Resources)</li>
         <li><strong>REST API + gRPC</strong> — native Janus API for SDK clients</li>
     </ul>

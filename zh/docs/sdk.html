@@ -98,7 +98,6 @@
             <div class="method-item"><div class="method-name">ack_task</div><div class="method-desc">确认完成</div></div>
             <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">否定确认</div></div>
             <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">列出/过滤任务</div></div>
-            <div class="method-item"><div class="method-name">resolve_intent</div><div class="method-desc">解析意图</div></div>
         </div>
         <pre><code><span class="tok-c"># 创建邮箱</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">create_mailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-o">=</span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d">)</span>
@@ -131,7 +130,6 @@
             <div class="method-item"><div class="method-name">ackTask</div><div class="method-desc">确认完成</div></div>
             <div class="method-item"><div class="method-name">nackTask</div><div class="method-desc">否定确认</div></div>
             <div class="method-item"><div class="method-name">listTasks</div><div class="method-desc">列出/过滤任务</div></div>
-            <div class="method-item"><div class="method-name">resolveIntent</div><div class="method-desc">解析意图</div></div>
         </div>
         <pre><code><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">创建邮箱</span>
 <span class="tok-d">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">createMailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">agentId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>

@@ -249,7 +249,7 @@
     <ul>
         <li>租约在配置的超时时间后过期</li>
         <li>任务回到 <code>pending</code> 状态，可被其他 Agent 重新拉取</li>
-        <li>幂等的 ACK/NACK 确保精确一次（exactly-once）语义</li>
+        <li>幂等的 ACK/NACK 提供"至少一次"投递，且不会重复处理</li>
     </ul>
 
     <h2>信封（Envelope）</h2>
@@ -267,17 +267,13 @@
         <li><strong>直接路由</strong> — 发布到指定邮箱</li>
         <li><strong>基于能力</strong> — 描述你的需求，Janus 自动找到最合适的 Agent</li>
     </ul>
-    <p><strong>意图解析器（Intent Resolver）</strong>接受自然语言描述，并将其匹配到已注册的 Agent 能力：</p>
-    <pre><code><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">resolve_intent</span><span class="tok-d">(</span><span class="tok-s">&quot;Review a Go pull request for race conditions&quot;</span><span class="tok-d">)</span>
-<span class="tok-c"># → Confidence: 0.92</span>
-<span class="tok-c"># → Matched capability: &quot;go-code-review&quot;</span>
-<span class="tok-c"># → Suggested target: &quot;review-mb&quot;</span></code></pre>
+    <p><em>路线图（v1.1.0）：</em>自然语言<strong>意图解析器</strong>将把自由文本请求匹配到已注册的 Agent 能力。当前派发方式为<strong>直接路由</strong>（发布到指定邮箱）或基于结构的<strong>能力查询</strong>。</p>
 
     <h2>治理（Governance）</h2>
     <p>每一次任务派发都会经过策略与预算检查：</p>
     <ul>
         <li><strong>策略引擎</strong> — 谁能调用谁、使用什么数据形态</li>
-        <li><strong>预算控制</strong> — RPM / TPM / 并发 / 每日成本限制</li>
+        <li><strong>预算控制</strong> — RPM / TPM / 并发限制（成本追踪为估算值，基于 Agent 上报用量）</li>
         <li><strong>审计轨迹</strong> — 每一次 publish、pull、start、ack、nack 都被记录</li>
         <li><strong>人工审批</strong> — 高风险任务可以要求手动审批</li>
     </ul>
@@ -286,7 +282,7 @@
     <p>Janus 原生支持多种 Agent 通信协议：</p>
     <ul>
         <li><strong>A2A 网关</strong> — Google Agent-to-Agent 协议（Agent Card、Task Send）</li>
-        <li><strong>ACP 网关</strong> — Anthropic Communication Protocol（Manifest、Runs）</li>
+        <li><strong>ACP 网关</strong> — IBM/BeeAI 的 Agent Communication Protocol（Manifest、Runs；现已并入 A2A）</li>
         <li><strong>MCP 网关</strong> — Model Context Protocol（Tools、Resources）</li>
         <li><strong>REST API + gRPC</strong> — 面向 SDK 客户端的原生 Janus API</li>
     </ul>

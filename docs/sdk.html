@@ -97,7 +97,6 @@ client = JanusClient("http://localhost:8080", tenant_id="acme")</code></pre>
             <div class="method-item"><div class="method-name">ack_task</div><div class="method-desc">Acknowledge completion</div></div>
             <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">Negative ACK</div></div>
             <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">List/filter tasks</div></div>
-            <div class="method-item"><div class="method-name">resolve_intent</div><div class="method-desc">Resolve intent</div></div>
         </div>
         <pre><code># Create mailbox
 client.create_mailbox("review-mb", agent_id="reviewer")
@@ -130,7 +129,6 @@ const client = new JanusClient("http://localhost:8080", { tenantId: "acme" });</
             <div class="method-item"><div class="method-name">ackTask</div><div class="method-desc">Acknowledge completion</div></div>
             <div class="method-item"><div class="method-name">nackTask</div><div class="method-desc">Negative ACK</div></div>
             <div class="method-item"><div class="method-name">listTasks</div><div class="method-desc">List/filter tasks</div></div>
-            <div class="method-item"><div class="method-name">resolveIntent</div><div class="method-desc">Resolve intent</div></div>
         </div>
         <pre><code>// Create mailbox
 await client.createMailbox("review-mb", { agentId: "reviewer" });
