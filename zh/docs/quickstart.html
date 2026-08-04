@@ -486,6 +486,35 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
+    <h3 id="target-types">投递目标类型</h3>
+    <p>Janus 支持四种任务投递方式：</p>
+    <ul>
+        <li><strong>mailbox</strong> — 投递到指定邮箱（队列）。适合点对点工作流。</li>
+        <li><strong>agent</strong> — 投递到特定 Agent。Janus 自动将 <code>agent-2</code> 解析为其活跃邮箱。</li>
+        <li><strong>capability</strong> — 描述你的需求,Janus 找到具备该能力的在线 Agent。</li>
+        <li><strong>group</strong> — 投递到团队。在 agent 配置中设置 <code>team: "sre"</code>,然后以 <code>target_type: "group", target_value: "sre"</code> 发布。</li>
+    </ul>
+    <pre><code><span class="tok-c"># 示例：投递给特定 Agent</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-002"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"agent"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"reviewer"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"pr_url"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"https://github.com/org/repo/pull/42"</span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 示例：按能力投递</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-003"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"go-code-review"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"go_pr_review"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"repo"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"myapp"</span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 示例：投递给团队</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-004"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"group"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"sre"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"deploy"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"version"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"2.0.0"</span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
     <h2 id="pull-task">7. 拉取并完成任务</h2>
     <p>创建文件 <code>worker.py</code>：</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>

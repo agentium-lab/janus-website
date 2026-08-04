@@ -485,6 +485,41 @@
 <span class="tok-k">print</span><span class="tok-o">(</span><span class="tok-s">&quot;Published:&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">)</span></code></pre>
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
+    <h3 id="target-types">Target Types</h3>
+    <p>Janus supports four ways to route a task to its destination:</p>
+    <ul>
+        <li><strong>mailbox</strong> — deliver directly to a specific mailbox. Best for point-to-point workflows.</li>
+        <li><strong>agent</strong> — deliver to a specific agent. Janus resolves <code>agent-2</code> to its active mailbox automatically.</li>
+        <li><strong>capability</strong> — describe what you need, Janus finds an online agent with that capability.</li>
+        <li><strong>group</strong> — deliver to a team. Set <code>team: "sre"</code> in your agent config, then publish with <code>target_type: "group", target_value: "sre"</code>.</li>
+    </ul>
+    <pre><code><span class="tok-c"># Example: to a specific agent</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-002"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"agent"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"reviewer"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"pr_url"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"https://github.com/org/repo/pull/42"</span><span class="tok-o">}</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"priority"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"high"</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># Example: by capability (intent-driven)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-003"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"go-code-review"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"go_pr_review"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"repo"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"myapp"</span><span class="tok-o">}</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"priority"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"normal"</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># Example: to a team (group routing)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"task-004"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"group"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"sre"</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"deploy"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"version"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"2.0.0"</span><span class="tok-o">}</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"priority"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"high"</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
     <h2 id="pull-task">7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
