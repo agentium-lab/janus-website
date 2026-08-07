@@ -486,12 +486,13 @@
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
     <h3 id="target-types">Target Types</h3>
-    <p>Janus supports four ways to route a task to its destination:</p>
+    <p>Janus supports five ways to route a task to its destination:</p>
     <ul>
         <li><strong>mailbox</strong> — deliver directly to a specific mailbox. Best for point-to-point workflows.</li>
         <li><strong>agent</strong> — deliver to a specific agent. Janus resolves <code>agent-2</code> to its active mailbox automatically.</li>
         <li><strong>capability</strong> — describe what you need, Janus finds an online agent with that capability.</li>
         <li><strong>group</strong> — deliver to a team. Set <code>team: "sre"</code> in your agent config, then publish with <code>target_type: "group", target_value: "sre"</code>.</li>
+        <li><strong>intent</strong> — describe what you need in natural language. Requires LLM configuration (<code>JANUS_LLM_ENABLED=true</code>). Janus maps your request to the best matching capability.</li>
     </ul>
     <pre><code><span class="tok-c"># Example: to a specific agent</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>

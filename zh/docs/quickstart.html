@@ -487,12 +487,13 @@
     <pre><code><span class="tok-f">python</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-o">.</span><span class="tok-d">py</span></code></pre>
 
     <h3 id="target-types">投递目标类型</h3>
-    <p>Janus 支持四种任务投递方式：</p>
+    <p>Janus 支持五种任务投递方式：</p>
     <ul>
         <li><strong>mailbox</strong> — 投递到指定邮箱（队列）。适合点对点工作流。</li>
         <li><strong>agent</strong> — 投递到特定 Agent。Janus 自动将 <code>agent-2</code> 解析为其活跃邮箱。</li>
         <li><strong>capability</strong> — 描述你的需求,Janus 找到具备该能力的在线 Agent。</li>
         <li><strong>group</strong> — 投递到团队。在 agent 配置中设置 <code>team: "sre"</code>,然后以 <code>target_type: "group", target_value: "sre"</code> 发布。</li>
+        <li><strong>intent</strong> — 用自然语言描述需求。需要 LLM 配置（<code>JANUS_LLM_ENABLED=true</code>）。Janus 将你的描述映射到最匹配的能力。</li>
     </ul>
     <pre><code><span class="tok-c"># 示例：投递给特定 Agent</span>
 <span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
