@@ -459,6 +459,15 @@
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
     <p>生产环境请保持 <code>auth.enabled</code> 开启 —— 关闭后所有 API 端点都不再鉴权。</p>
 
+    <h4>意图路由 LLM 配置（可选）</h4>
+    <p>启用 <code>target_type: "intent"</code>（自然语言 → 能力路由）需要配置 OpenAI 兼容的 LLM：</p>
+    <pre><code><span class="tok-c"># 环境变量</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_API_KEY</span><span class="tok-o">=</span><span class="tok-d">sk-xxx</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_MODEL</span><span class="tok-o">=</span><span class="tok-d">gpt-4o-mini</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_BASE_URL</span><span class="tok-o">=</span><span class="tok-d">https://api.openai.com/v1</span>  <span class="tok-c"># 或 Ollama/vLLM/Azure</span></code></pre>
+    <p>未配置 LLM 时,<code>target_type: "intent"</code> 降级为关键词匹配（无外部依赖）。配置后,Janus 通过 LLM 将自然语言映射到最匹配的能力,经在线 agent catalog 校验后确定性路由。</p>
+
     <h2 id="install-sdk">5. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 

@@ -458,6 +458,15 @@
 <span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
     <p>Keep <code>auth.enabled</code> on in production — when disabled, every API endpoint is unauthenticated.</p>
 
+    <h4>LLM for Intent Routing (optional)</h4>
+    <p>To enable <code>target_type: "intent"</code> (natural language → capability routing), configure an OpenAI-compatible LLM:</p>
+    <pre><code><span class="tok-c"># Environment variables</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_API_KEY</span><span class="tok-o">=</span><span class="tok-d">sk-xxx</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_MODEL</span><span class="tok-o">=</span><span class="tok-d">gpt-4o-mini</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_BASE_URL</span><span class="tok-o">=</span><span class="tok-d">https://api.openai.com/v1</span>  <span class="tok-c"># or Ollama/vLLM/Azure</span></code></pre>
+    <p>When LLM is not configured, <code>target_type: "intent"</code> falls back to keyword matching (no external dependency). When configured, Janus maps natural language to the best matching capability via the LLM, validates the result against the online agent catalog, then routes deterministically.</p>
+
     <h2 id="install-sdk">5. Install the Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
 
