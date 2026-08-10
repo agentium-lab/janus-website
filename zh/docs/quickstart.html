@@ -685,6 +685,157 @@ dedupe_key       text         -- (tenant_id, dedupe_key) 唯一，防重复投�
     </ul>
     <div class="note">Janus Core 容器以 <code>readOnlyRootFilesystem</code> 运行，唯一持久卷只用于产物落盘（<code>artifacts</code>）—— 不含任何运行态，因此副本是无状态、可随时替换的。</div>
 
+    <h2 id="example-smart-service">完整示例：智能客服中心</h2>
+    <p>本节通过一个真实的多 Agent 协作场景——<strong>处理客户发错货投诉</strong>——展示 Janus 的路由、可靠性和治理功能如何在一个类生产工作流中协同工作。</p>
+
+    <h3>你将学到</h3>
+    <ul>
+        <li>使用 <code>target_type: intent</code> 进行 LLM 驱动的自然语言路由</li>
+        <li>基于能力的路由（<code>target_type: capability</code>）</li>
+        <li>并行任务扇出与 Barrier 同步</li>
+        <li>任务租约过期与自动恢复（Agent 崩溃场景）</li>
+        <li>Agent 之间的数据传递（A 的产出 → B 的输入）</li>
+    </ul>
+
+    <h3>场景</h3>
+    <p>客户投诉：<em>"我订购了红色手机，却收到了蓝色的。需要换货。"</em></p>
+    <p>Janus 协调<strong>四个 Agent</strong>来处理：</p>
+    <ol>
+        <li><strong>物流员</strong> — 调查原始订单（能力：<code>wrong_item_investigate</code>，团队：<code>logistics</code>）</li>
+        <li><strong>发货员</strong> — 发出正确的红色手机（能力：<code>reship</code>，团队：<code>warehouse</code>）</li>
+        <li><strong>回收员</strong> — 安排取回错误的蓝色手机（能力：<code>retrieve_wrong</code>，团队：<code>warehouse</code>）</li>
+        <li><strong>通知员</strong> — 向客户发送状态更新（能力：<code>notify</code>，团队：<code>support</code>）</li>
+    </ol>
+
+    <h3>流程（含故障注入）</h3>
+    <pre>
+客户："订的红色收到了蓝色"
+    │
+    ▼  intent LLM → "wrong_item_investigate"
+    │
+物流员 ─── 拉取订单 ─── 💀 崩溃(不 ACK) ─── 租约过期 ─── 恢复 ─── ACK
+    │
+    │  数据：{order: "ORD-789", ordered: "red", shipped: "blue"}
+    ▼
+    ├── ► 发货员 ─── 发正确的红色 ─── ACK {tracking: "SF789"}
+    ├── ► 回收员 ─── 取回错误的蓝色 ─── ACK {pickup: "PU123"}
+    └── ► 通知员 ─── "换货已启动" ─── ACK
+            │
+            ▼
+         通知员 ─── "红色已发SF789，蓝色取件PU123" ─── ACK</pre>
+
+    <p><strong>核心设计：</strong>物流员的调查结果（哪个商品正确、哪个错误）<strong>驱动下游 Agent 的行为</strong>——发货员读取调查数据知道<em>发什么</em>；回收员读取调查数据知道<em>回收什么</em>。Agent 之间不是各干各的，而是<strong>通过数据流协作</strong>。</p>
+
+    <h3>第 1 步：注册 Agent 及其能力</h3>
+    <p>每个 Agent 声明自己能做什么（<code>capability</code>）和所属团队（<code>team</code>）。Janus 用能力做匹配，用团队做分组路由。</p>
+    <pre><code><span class="tok-c"># 注册四个 Agent</span>
+<span class="tok-k">for</span><span class="tok-d"> </span><span class="tok-t">agent</span><span class="tok-d"> </span><span class="tok-k">in</span><span class="tok-d"> </span><span class="tok-o">[</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"物流员"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"发货员"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"回收员"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"通知员"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"support"</span><span class="tok-o">}</span>
+<span class="tok-o">]</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_agent</span><span class="tok-o">(</span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"id"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"display_name"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"team"</span><span class="tok-o">]</span><span class="tok-o">)</span></code></pre>
+
+    <p>然后为每个 Agent 分配能力和创建邮箱（任务队列）：</p>
+    <pre><code><span class="tok-c"># 能力：每个 Agent 能做什么</span>
+<span class="tok-d">caps</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"wrong_item_investigate"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">:</span><span class="tok-d">  </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"return-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"notify-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-o">}</span>
+<span class="tok-c"># 创建邮箱（物流邮箱 ACK 超时设为 5 秒，用于租约过期测试）</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">ack_wait</span><span class="tok-o">=</span><span class="tok-n">5</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span></code></pre>
+
+    <h3>第 2 步：用意图路由（LLM 驱动）发起任务</h3>
+    <p>不指定具体的 agent 或能力，而是用 <code>target_type: intent</code> 配合自然语言描述。Janus 的 LLM 解析器将请求映射到最匹配的能力：</p>
+    <pre><code><span class="tok-c"># 客户投诉 → LLM 解析为 "wrong_item_investigate"</span>
+<span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-s">"task-001"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"customer"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"intent"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"收到错误商品，订购红色手机收到蓝色，需要换货"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d">     </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"complaint"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-c"># Janus 自动解析：</span>
+<span class="tok-c">#   target_type: "capability"</span>
+<span class="tok-c">#   target_value: "wrong_item_investigate"</span>
+<span class="tok-c">#   → 路由到 logistics-mb（物流员的邮箱）</span></code></pre>
+
+    <h3>第 3 步：租约过期——测试可靠性</h3>
+    <p>Janus 保证至少一次投递。当 Agent 拉取任务后<strong>崩溃而未 ACK</strong>，租约过期后任务自动返回队列：</p>
+    <pre><code><span class="tok-c"># 物流员拉取任务……</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 💀 模拟崩溃 —— 不 ACK，直接停止</span>
+<span class="tok-c"># 租约过期后（配置的 5 秒），Janus 自动将任务重新投递到邮箱</span>
+
+<span class="tok-c"># Agent 恢复后重新拉取：</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">)</span>
+<span class="tok-c"># ← 同一个任务！Janus 在租约过期后重新投递了它</span>
+
+<span class="tok-c"># 正常 ACK，附带调查结果（传给下游 Agent）：</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span><span class="tok-d"> </span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"confirmed":</span><span class="tok-d"> </span><span class="tok-s">true,</span><span class="tok-d"> </span><span class="tok-s">"order":</span><span class="tok-d"> </span><span class="tok-s">"ORD-789",</span><span class="tok-d"> </span><span class="tok-s">"ordered":</span><span class="tok-d"> </span><span class="tok-s">"red",</span><span class="tok-d"> </span><span class="tok-s">"shipped":</span><span class="tok-d"> </span><span class="tok-s">"blue"</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span></code></pre>
+
+    <h3>第 4 步：扇出——三个并行分支</h3>
+    <p>确认发错货后，Janus 协调三个并行工作流。每个分支用不同的路由方式：</p>
+    <pre><code><span class="tok-c"># 分支 A：发出正确商品（能力路由）</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"correct"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"red"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-c"># → Janus 找到发货员（capability: reship），路由到 shipping-mb</span>
+
+<span class="tok-c"># 分支 B：回收错误商品（能力路由）</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"wrong"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"blue"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 分支 C：通知客户（能力路由到 support 团队）</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"message"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"换货已启动"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
+    <h3>第 5 步：各 Agent 独立处理自己的分支</h3>
+    <p>每个 Agent 独立拉取、处理、ACK 自己的任务，产出结果数据流向下游：</p>
+    <pre><code><span class="tok-c"># 发货员：拉取 → 处理 → ACK（带快递单号）</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"tracking":</span><span class="tok-d"> </span><span class="tok-s">"SF789",</span><span class="tok-d"> </span><span class="tok-s">"reshipped":</span><span class="tok-d"> </span><span class="tok-s">true</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 回收员：拉取 → 处理 → ACK（带取件信息）</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"pickup":</span><span class="tok-d"> </span><span class="tok-s">"PU123",</span><span class="tok-d"> </span><span class="tok-s">"scheduled":</span><span class="tok-d"> </span><span class="tok-s">true</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 通知员：拉取 → ACK（初始通知）</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">)</span></code></pre>
+
+    <h3>第 6 步：数据汇合——合并结果</h3>
+    <p>发货和回收都完成后，发布最终通知，<strong>合并两路结果</strong>——展示了 Agent 之间如何通过 Janus 传递和组合数据：</p>
+    <pre><code><span class="tok-c"># 最终通知合并发货 + 回收结果</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"shipping"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"tracking"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"SF789"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"return"</span><span class="tok-o">:</span><span class="tok-d">   </span><span class="tok-o">{</span><span class="tok-s">"pickup"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"PU123"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"message"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"红色手机已发出（SF789），蓝色手机已安排取件（PU123）"</span>
+<span class="tok-o">}</span><span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
+    <div class="note"><strong>这个示例展示的核心能力：</strong>这是一个完整的类生产工作流，覆盖了意图路由（LLM 驱动的自然语言→能力映射）、基于能力的路由（根据 Agent 能做什么来匹配）、同一管线中的多种路由类型、租约过期恢复（崩溃模拟）、并行分支执行，以及 Agent 之间的数据传递。同样的模式适用于客服工单处理、订单履约、理赔审核等任何需要多 Agent 协作并交换数据的工作流。</div>
+
     <h2 id="whats-next">下一步</h2>
     <ul>
         <li><a href="/zh/docs/concepts.html">阅读核心概念</a> — 理解邮箱、任务、租约与信封</li>

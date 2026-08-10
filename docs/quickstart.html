@@ -690,6 +690,159 @@ dedupe_key       text         -- unique (tenant_id, dedupe_key) prevents double 
     </ul>
     <div class="note">Janus Core runs with a <code>readOnlyRootFilesystem</code>; the only persistent volume is for artifact storage (<code>artifacts</code>) — it holds no runtime state, so replicas are stateless and replaceable at any time.</div>
 
+    <h2 id="example-smart-service">Complete Example: Smart Customer Service Center</h2>
+    <p>This section walks through a real-world multi-agent scenario — <strong>handling a customer complaint about a wrong item delivery</strong> — to show how Janus's routing, durability, and governance features work together in a production-like workflow.</p>
+
+    <h3>What You'll Learn</h3>
+    <ul>
+        <li>Using <code>target_type: intent</code> with LLM-powered natural language routing</li>
+        <li>Capability-based routing (<code>target_type: capability</code>)</li>
+        <li>Team-based routing (<code>target_type: group</code>)</li>
+        <li>Task lease expiry and automatic recovery when an agent crashes</li>
+        <li>Parallel task fan-out and barrier-style synchronization</li>
+        <li>Data passing between agents (Agent A's output becomes Agent B's input)</li>
+    </ul>
+
+    <h3>The Scenario</h3>
+    <p>A customer reports: <em>"I ordered a red phone but received a blue one. I need an exchange."</em></p>
+    <p>Janus coordinates <strong>four agents</strong> to resolve this:</p>
+    <ol>
+        <li><strong>Logistics Bot</strong> — investigates the original order (capability: <code>wrong_item_investigate</code>, team: <code>logistics</code>)</li>
+        <li><strong>Shipping Bot</strong> — ships the correct red phone (capability: <code>reship</code>, team: <code>warehouse</code>)</li>
+        <li><strong>Return Bot</strong> — arranges pickup of the wrong blue phone (capability: <code>retrieve_wrong</code>, team: <code>warehouse</code>)</li>
+        <li><strong>Notify Bot</strong> — sends status updates to the customer (capability: <code>notify</code>, team: <code>support</code>)</li>
+    </ol>
+
+    <h3>The Flow (With Failure Injection)</h3>
+    <pre>
+Customer: "I ordered red, got blue"
+    │
+    ▼  intent LLM → "wrong_item_investigate"
+    │
+Logistics-bot ─── pulls order ─── 💀 crashes (no ACK) ─── lease expires ─── recovers ─── ACKs
+    │
+    │  data: {order: "ORD-789", ordered: "red", shipped: "blue"}
+    ▼
+    ├── ► Shipping-bot ─── ships correct red ─── ACK {tracking: "SF789"}
+    ├── ► Return-bot   ─── picks up wrong blue ─── ACK {pickup: "PU123"}
+    └── ► Notify-bot   ─── "exchange started" ─── ACK
+            │
+            ▼
+         Notify-bot ─── "red shipped SF789, blue pickup PU123" ─── ACK</pre>
+
+    <p><strong>Key design:</strong> The logistics-bot's investigation result (<em>which item is correct, which is wrong</em>) drives the downstream agents — the shipping-bot reads the investigation data to know <em>what</em> to ship; the return-bot reads it to know <em>what</em> to retrieve. Agents don't just acknowledge tasks — they <strong>produce data that other agents consume</strong>.</p>
+
+    <h3>Step 1: Register Agents and Their Capabilities</h3>
+    <p>Each agent declares what it can do (<code>capability</code>) and which team it belongs to (<code>team</code>). Janus uses capabilities for matching and teams for group routing.</p>
+    <pre><code><span class="tok-c"># Register the four agents</span>
+<span class="tok-k">for</span><span class="tok-d"> </span><span class="tok-t">agent</span><span class="tok-d"> </span><span class="tok-k">in</span><span class="tok-d"> </span><span class="tok-o">[</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Logistics Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Shipping Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Return Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Notify Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"support"</span><span class="tok-o">}</span>
+<span class="tok-o">]</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_agent</span><span class="tok-o">(</span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"id"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"display_name"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"team"</span><span class="tok-o">]</span><span class="tok-o">)</span></code></pre>
+
+    <p>Then assign capabilities and create mailboxes (task queues) for each agent:</p>
+    <pre><code><span class="tok-c"># Capabilities: what each agent can do</span>
+<span class="tok-d">caps</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"wrong_item_investigate"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">:</span><span class="tok-d">  </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"return-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"notify-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-o">}</span>
+<span class="tok-c"># Create mailboxes (each with a 5-second ACK timeout for logistics)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">ack_wait</span><span class="tok-o">=</span><span class="tok-n">5</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span></code></pre>
+
+    <h3>Step 2: Publish with Intent Routing (LLM-Powered)</h3>
+    <p>Instead of specifying a concrete agent or capability, use <code>target_type: intent</code> with natural language. Janus's LLM-powered resolver maps the request to the best matching capability:</p>
+    <pre><code><span class="tok-c"># Customer complaint → LLM resolves to "wrong_item_investigate"</span>
+<span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-s">"task-001"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"customer"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"intent"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"received wrong item, ordered red but got blue, need exchange"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d">     </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"complaint"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-c"># Janus automatically resolves:</span>
+<span class="tok-c">#   target_type: "capability"</span>
+<span class="tok-c">#   target_value: "wrong_item_investigate"</span>
+<span class="tok-c">#   → routes to logistics-mb (logistics-bot's mailbox)</span></code></pre>
+
+    <h3>Step 3: Lease Expiry — Testing Durability</h3>
+    <p>Janus guarantees at-least-once delivery. When an agent pulls a task and <strong>crashes without ACKing</strong>, the lease expires and the task automatically returns to the queue:</p>
+    <pre><code><span class="tok-c"># logistics-bot pulls the task...</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">)</span>
+
+<span class="tok-c"># 💀 Simulate a crash — do NOT ACK. Just stop.</span>
+<span class="tok-c"># After the lease expires (5 seconds with our config),</span>
+<span class="tok-c"># Janus automatically re-delivers the task to the mailbox.</span>
+
+<span class="tok-c"># When the agent recovers and pulls again:</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">)</span>
+<span class="tok-c"># ← Same task! Janus redelivered it after lease expiry.</span>
+
+<span class="tok-c"># Now ACK with investigation results (data for downstream agents):</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span><span class="tok-d"> </span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"confirmed":</span><span class="tok-d"> </span><span class="tok-s">true,</span><span class="tok-d"> </span><span class="tok-s">"order":</span><span class="tok-d"> </span><span class="tok-s">"ORD-789",</span><span class="tok-d"> </span><span class="tok-s">"ordered":</span><span class="tok-d"> </span><span class="tok-s">"red",</span><span class="tok-d"> </span><span class="tok-s">"shipped":</span><span class="tok-d"> </span><span class="tok-s">"blue"</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span></code></pre>
+
+    <h3>Step 4: Fan-Out — Three Parallel Branches</h3>
+    <p>After confirming the wrong item, Janus orchestrates three parallel workflows. Each branch routes differently — <strong>capability routing</strong> for shipping/return, <strong>group routing</strong> for notifications:</p>
+    <pre><code><span class="tok-c"># Branch A: Ship the correct item (capability routing)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"correct"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"red"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-c"># → Janus finds shipping-bot (capability: reship) and routes to shipping-mb</span>
+
+<span class="tok-c"># Branch B: Retrieve the wrong item (capability routing)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"wrong"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"blue"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+
+<span class="tok-c"># Branch C: Notify customer (capability routing to support team)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"message"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"exchange started"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
+    <h3>Step 5: Each Agent Processes Its Branch</h3>
+    <p>Each agent independently pulls, processes, and ACKs its task, producing result data that flows to downstream agents:</p>
+    <pre><code><span class="tok-c"># Shipping-bot: pull → process → ACK with tracking number</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"tracking":</span><span class="tok-d"> </span><span class="tok-s">"SF789",</span><span class="tok-d"> </span><span class="tok-s">"reshipped":</span><span class="tok-d"> </span><span class="tok-s">true</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span>
+
+<span class="tok-c"># Return-bot: pull → process → ACK with pickup info</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-d">result_ref</span><span class="tok-o">=</span><span class="tok-s">'{</span><span class="tok-d"> </span><span class="tok-s">"pickup":</span><span class="tok-d"> </span><span class="tok-s">"PU123",</span><span class="tok-d"> </span><span class="tok-s">"scheduled":</span><span class="tok-d"> </span><span class="tok-s">true</span><span class="tok-d"> }</span><span class="tok-s">'</span><span class="tok-o">)</span>
+
+<span class="tok-c"># Notify-bot: pull → ACK (initial notification)</span>
+<span class="tok-d">delivery</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">pull_task</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">ack_task</span><span class="tok-o">(</span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">task_id</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">delivery</span><span class="tok-o">.</span><span class="tok-d">lease_id</span><span class="tok-o">)</span></code></pre>
+
+    <h3>Step 6: Data Fan-In — Combine Results</h3>
+    <p>After both shipping and return complete, publish a final notification with <strong>both results combined</strong> — demonstrating how agents pass data through the system:</p>
+    <pre><code><span class="tok-c"># Final notification combines shipping + return results</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d">    </span><span class="tok-s">"shipping"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"tracking"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"SF789"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"return"</span><span class="tok-o">:</span><span class="tok-d">   </span><span class="tok-o">{</span><span class="tok-s">"pickup"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"PU123"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">    </span><span class="tok-s">"message"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Red phone shipped (SF789), blue phone pickup (PU123)"</span>
+<span class="tok-o">}</span><span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+
+    <div class="note"><strong>What this example demonstrates:</strong> This is a complete production-like workflow covering intent routing (LLM-powered NL → capability), capability routing (find the right agent by what it can do), multiple routing types in one pipeline, lease expiry recovery (crash simulation), parallel branches, and data passing between agents. The same patterns apply to customer support, order fulfillment, claims processing, and any multi-agent workflow where agents need to collaborate and pass data.</div>
+
     <h2 id="whats-next">What's Next</h2>
     <ul>
         <li><a href="/docs/concepts.html">Read Core Concepts</a> — understand mailboxes, tasks, leases, and envelopes</li>
