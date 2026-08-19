@@ -65,69 +65,83 @@
 
     <h3>邮箱</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes</span></div>
-        <div class="desc">创建邮箱。请求体：<code>{ "name": "review-mb", "agent_id": "reviewer" }</code></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/mailboxes</span></div>
+        <div class="desc">创建邮箱。请求体：<code>{ "id": "review-mb", "agent_id": "reviewer", "ack_wait_seconds": 300, "max_deliver": 5 }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/mailboxes/{id}</span></div>
         <div class="desc">获取邮箱详情与统计。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes</span></div>
-        <div class="desc">列出该租户下所有邮箱。</div>
+        <div><span class="method patch">PATCH</span><span class="path">/v1/tenants/{tenant}/mailboxes/{id}</span></div>
+        <div class="desc">更新邮箱配置（max_concurrency、ack_wait_seconds、max_deliver、retention_seconds）。</div>
+    </div>
+
+    <h3>Agent</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/agents</span></div>
+        <div class="desc">注册 Agent 并附带能力。请求体：<code>{ "id", "display_name", "team", "protocol", "capabilities": [{ "capability", "description" }] }</code>。v1.1.0 起能力原子化持久化。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method delete">DELETE</span><span class="path">/api/v1/mailboxes/{name}</span></div>
-        <div class="desc">删除邮箱（必须为空）。</div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/agents/{id}/heartbeat</span></div>
+        <div class="desc">发送心跳，保持 Agent 在线（TTL 由 <code>JANUS_HB_TTL</code> 控制）。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/agents</span></div>
+        <div class="desc">列出已注册的 Agent。</div>
     </div>
 
     <h3>任务</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks</span></div>
-        <div class="desc">发布任务。请求体：<code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
+        <div class="desc">发布任务。请求体：<code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code>。响应：<code>{ "id", "status", "task": {...} }</code> — v1.1.0 起包含完整 task 对象。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes/{name}/pull</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/mailboxes/{name}/pull</span></div>
         <div class="desc">从邮箱拉取下一个待处理任务。请求体：<code>{ "agent_id": "reviewer" }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/start</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/start</span></div>
         <div class="desc">开始处理任务。请求体：<code>{ "lease_id": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/ack</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/ack</span></div>
         <div class="desc">确认成功完成。请求体：<code>{ "lease_id": "...", "result_ref": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/nack</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/nack</span></div>
         <div class="desc">否定确认 — 回到队列或进入 DLQ。请求体：<code>{ "lease_id": "...", "reason": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/tasks/{id}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks/{id}</span></div>
         <div class="desc">获取任务详情与当前状态。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/tasks</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
         <div class="desc">列出任务，支持可选过滤（状态、邮箱、来源）。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/replay</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/replay</span></div>
         <div class="desc">将任务从 DLQ 重放回 pending 状态。</div>
     </div>
 
-    <h3>意图解析</h3>
+    <h3>Catalog 与意图</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/intent/resolve</span></div>
-        <div class="desc">将自然语言解析为能力。请求体：<code>{ "query": "Review Go code for bugs", "tenant_id": "acme" }</code></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/catalog</span></div>
+        <div class="desc">列出在线 Agent 及其能力（名称、描述、schema），供客户端侧匹配使用。</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
+        <div class="desc">意图路由 — 以 <code>target_type: "intent"</code> 和自然语言 <code>target_value</code> 发布任务。Janus 在派发前将其解析为最匹配的能力（配置了 <code>JANUS_LLM_ENABLED</code> 时用 LLM，否则降级关键词匹配）。没有单独的 resolve 端点。</div>
     </div>
 
     <h3>工件（Artifacts）</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/artifacts</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/artifacts</span></div>
         <div class="desc">上传工件。Multipart 表单，带租户隔离。</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/artifacts/{id}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/artifacts/{id}</span></div>
         <div class="desc">下载工件（租户作用域访问检查）。</div>
     </div>
 

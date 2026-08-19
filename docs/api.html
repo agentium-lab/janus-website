@@ -64,69 +64,83 @@
 
     <h3>Mailboxes</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes</span></div>
-        <div class="desc">Create a mailbox. Body: <code>{ "name": "review-mb", "agent_id": "reviewer" }</code></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/mailboxes</span></div>
+        <div class="desc">Create a mailbox. Body: <code>{ "id": "review-mb", "agent_id": "reviewer", "ack_wait_seconds": 300, "max_deliver": 5 }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes/{name}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/mailboxes/{id}</span></div>
         <div class="desc">Get mailbox details and stats.</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/mailboxes</span></div>
-        <div class="desc">List all mailboxes for the tenant.</div>
+        <div><span class="method patch">PATCH</span><span class="path">/v1/tenants/{tenant}/mailboxes/{id}</span></div>
+        <div class="desc">Update mailbox config (max_concurrency, ack_wait_seconds, max_deliver, retention_seconds).</div>
+    </div>
+
+    <h3>Agents</h3>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/agents</span></div>
+        <div class="desc">Register an agent with capabilities. Body: <code>{ "id", "display_name", "team", "protocol", "capabilities": [{ "capability", "description" }] }</code>. Capabilities are persisted atomically since v1.1.0.</div>
     </div>
     <div class="endpoint">
-        <div><span class="method delete">DELETE</span><span class="path">/api/v1/mailboxes/{name}</span></div>
-        <div class="desc">Delete a mailbox (must be empty).</div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/agents/{id}/heartbeat</span></div>
+        <div class="desc">Send heartbeat; keeps the agent online (TTL via <code>JANUS_HB_TTL</code>).</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/agents</span></div>
+        <div class="desc">List registered agents.</div>
     </div>
 
     <h3>Tasks</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks</span></div>
-        <div class="desc">Publish a task. Body: <code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
+        <div class="desc">Publish a task. Body: <code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code>. Response: <code>{ "id", "status", "task": {...} }</code> — full task object included since v1.1.0.</div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/mailboxes/{name}/pull</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/mailboxes/{name}/pull</span></div>
         <div class="desc">Pull next pending task from a mailbox. Body: <code>{ "agent_id": "reviewer" }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/start</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/start</span></div>
         <div class="desc">Start task processing. Body: <code>{ "lease_id": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/ack</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/ack</span></div>
         <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "result_ref": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/nack</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/nack</span></div>
         <div class="desc">Negative ACK — return to queue or DLQ. Body: <code>{ "lease_id": "...", "reason": "..." }</code></div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/tasks/{id}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks/{id}</span></div>
         <div class="desc">Get task details and current state.</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/tasks</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
         <div class="desc">List tasks with optional filters (status, mailbox, source).</div>
     </div>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/tasks/{id}/replay</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/replay</span></div>
         <div class="desc">Replay a task from DLQ back to pending.</div>
     </div>
 
-    <h3>Intent Resolution</h3>
+    <h3>Catalog &amp; Intent</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/intent/resolve</span></div>
-        <div class="desc">Resolve natural language to capability. Body: <code>{ "query": "Review Go code for bugs", "tenant_id": "acme" }</code></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/catalog</span></div>
+        <div class="desc">List online agents with their capabilities (name, description, schema) for client-side matching.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
+        <div class="desc">Intent routing — publish with <code>target_type: "intent"</code> and a natural-language <code>target_value</code>. Janus resolves it to the best matching capability (LLM if configured via <code>JANUS_LLM_ENABLED</code>, keyword fallback otherwise) before dispatch. There is no separate resolve endpoint.</div>
     </div>
 
     <h3>Artifacts</h3>
     <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/api/v1/artifacts</span></div>
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/artifacts</span></div>
         <div class="desc">Upload an artifact. Multipart form with tenant isolation.</div>
     </div>
     <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/api/v1/artifacts/{id}</span></div>
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/artifacts/{id}</span></div>
         <div class="desc">Download an artifact (tenant-scoped access check).</div>
     </div>
 
