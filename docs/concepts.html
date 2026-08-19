@@ -261,12 +261,13 @@
     </ul>
 
     <h2>Routing &amp; Capability Resolution</h2>
-    <p>Janus supports two dispatch modes:</p>
+    <p>Janus routes every task to the right agent through five target types:</p>
     <ul>
-        <li><strong>Direct</strong> — publish to a specific mailbox</li>
-        <li><strong>Capability-based</strong> — describe what you need, Janus finds the best agent</li>
+        <li><strong>Direct</strong> — publish to a specific <code>mailbox</code> or <code>agent</code></li>
+        <li><strong>Capability-based</strong> — set <code>target_type: capability</code> and Janus finds an online agent that declares that capability</li>
+        <li><strong>Group</strong> — set <code>target_type: group</code> to deliver to a team. Group membership comes from the <code>team</code> field on each agent's registration — Janus resolves the team to its online members' active mailboxes automatically</li>
+        <li><strong>Intent</strong> — set <code>target_type: intent</code> with a natural-language description. With LLM configured (<code>JANUS_LLM_ENABLED</code>), Janus maps the text to the best matching capability, validates it against the live catalog, then routes deterministically; without LLM, a keyword matcher is used as fallback</li>
     </ul>
-    <p><em>Roadmap (v1.1.0):</em> A natural-language <strong>Intent Resolver</strong> will match free-text requests to registered agent capabilities. Today, dispatch is <strong>direct</strong> (publish to a specific mailbox) or <strong>capability-based</strong> via structured capability lookup.</p>
 
     <h2>Governance</h2>
     <p>Every task dispatch passes through policy and budget checks:</p>

@@ -262,12 +262,13 @@
     </ul>
 
     <h2>路由与能力解析</h2>
-    <p>Janus 支持两种派发模式：</p>
+    <p>Janus 通过五种目标类型把每个任务路由到正确的 Agent：</p>
     <ul>
-        <li><strong>直接路由</strong> — 发布到指定邮箱</li>
-        <li><strong>基于能力</strong> — 描述你的需求，Janus 自动找到最合适的 Agent</li>
+        <li><strong>直接路由</strong> — 发布到指定 <code>mailbox</code> 或 <code>agent</code></li>
+        <li><strong>基于能力</strong> — 设置 <code>target_type: capability</code>，Janus 找到声明了该能力的在线 Agent</li>
+        <li><strong>团队路由</strong> — 设置 <code>target_type: group</code> 投递给某个团队。团队成员关系来自每个 Agent 注册时的 <code>team</code> 字段——Janus 自动把团队解析为其在线成员的活跃邮箱</li>
+        <li><strong>意图路由</strong> — 设置 <code>target_type: intent</code> 并附自然语言描述。配置了 LLM（<code>JANUS_LLM_ENABLED</code>）时，Janus 将文本映射到最匹配的能力，经在线 catalog 校验后确定性路由；未配置 LLM 时降级为关键词匹配</li>
     </ul>
-    <p><em>路线图（v1.1.0）：</em>自然语言<strong>意图解析器</strong>将把自由文本请求匹配到已注册的 Agent 能力。当前派发方式为<strong>直接路由</strong>（发布到指定邮箱）或基于结构的<strong>能力查询</strong>。</p>
 
     <h2>治理（Governance）</h2>
     <p>每一次任务派发都会经过策略与预算检查：</p>
