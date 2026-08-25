@@ -50,10 +50,10 @@
     <h2>Go SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">get</span><span class="tok-d"> </span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-sdk-go</span></code></pre>
+        <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">get</span><span class="tok-d"> </span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus/sdk/go</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-s">&quot;github.com/agentium-lab/janus-sdk-go/janus&quot;</span>
+        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-s">&quot;github.com/agentium-lab/Janus/sdk/go&quot;</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">:</span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">NewClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">WithTenant</span><span class="tok-o">(</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span><span class="tok-o">)</span></code></pre>
 
@@ -83,10 +83,10 @@
     <h2>Python SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
+        <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-broker</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_broker</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span></code></pre>
 
         <p><strong>关键方法（共 34 个）</strong></p>
@@ -115,10 +115,10 @@
     <h2>TypeScript SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium</span><span class="tok-o">/</span><span class="tok-d">janus-sdk</span></code></pre>
+        <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-broker</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-s">&quot;@agentium/janus-sdk&quot;</span><span class="tok-d">;</span>
+        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-s">&quot;@agentium-lab/janus-broker&quot;</span><span class="tok-d">;</span>
 <span class="tok-d">const</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">new</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-d">tenantId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;acme&quot;</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span><span class="tok-d">;</span></code></pre>
 
         <p><strong>关键方法（共 30 个）</strong></p>

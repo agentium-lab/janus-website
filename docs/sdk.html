@@ -49,10 +49,10 @@
     <h2>Go SDK</h2>
     <div class="sdk-tab">
         <p><strong>Installation</strong></p>
-        <pre><code>go get github.com/agentium-lab/janus-sdk-go</code></pre>
+        <pre><code>go get github.com/agentium-lab/Janus/sdk/go</code></pre>
 
         <p><strong>Client creation</strong></p>
-        <pre><code>import "github.com/agentium-lab/janus-sdk-go/janus"
+        <pre><code>import "github.com/agentium-lab/Janus/sdk/go"
 
 client := janus.NewClient("http://localhost:8080", janus.WithTenant("acme"))</code></pre>
 
@@ -82,10 +82,10 @@ resp, err := client.PublishTask(ctx, &amp;janus.PublishRequest{
     <h2>Python SDK</h2>
     <div class="sdk-tab">
         <p><strong>Installation</strong></p>
-        <pre><code>pip install janus-sdk</code></pre>
+        <pre><code>pip install janus-broker</code></pre>
 
         <p><strong>Client creation</strong></p>
-        <pre><code>from janus_sdk import JanusClient
+        <pre><code>from janus_broker import JanusClient
 client = JanusClient("http://localhost:8080", tenant_id="acme")</code></pre>
 
         <p><strong>Key methods (34 total)</strong></p>
@@ -114,10 +114,10 @@ resp = client.publish_task({
     <h2>TypeScript SDK</h2>
     <div class="sdk-tab">
         <p><strong>Installation</strong></p>
-        <pre><code>npm install @agentium/janus-sdk</code></pre>
+        <pre><code>npm install @agentium-lab/janus-broker</code></pre>
 
         <p><strong>Client creation</strong></p>
-        <pre><code>import { JanusClient } from "@agentium/janus-sdk";
+        <pre><code>import { JanusClient } from "@agentium-lab/janus-broker";
 const client = new JanusClient("http://localhost:8080", { tenantId: "acme" });</code></pre>
 
         <p><strong>Key methods (30 total)</strong></p>

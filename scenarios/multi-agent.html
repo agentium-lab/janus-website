@@ -63,7 +63,7 @@
     <div class="framework-card">
         <p>LangGraph agents publish tasks to Janus mailboxes and pull results from downstream agents. The Janus node acts as a reliable handoff between graph steps:</p>
         <pre><code>from langgraph.graph import StateGraph
-from janus_sdk import JanusClient
+from janus_broker import JanusClient
 
 client = JanusClient("http://janus:8080", tenant_id="acme")
 
@@ -95,7 +95,7 @@ graph.add_edge("review_node", "collect_node")</code></pre>
     <div class="framework-card">
         <p>AutoGen agents use Janus as a message bus for async team collaboration:</p>
         <pre><code>from autogen import AssistantAgent, UserProxyAgent
-from janus_sdk import JanusClient
+from janus_broker import JanusClient
 
 client = JanusClient("http://janus:8080", tenant_id="acme")
 
@@ -125,7 +125,7 @@ coder = JanusAgent(name="coder", llm_config=llm_config)</code></pre>
     <div class="framework-card">
         <p>CrewAI agents use Janus for persistent task handoff between crew members:</p>
         <pre><code>from crewai import Agent, Task, Crew
-from janus_sdk import JanusClient
+from janus_broker import JanusClient
 
 client = JanusClient("http://janus:8080", tenant_id="acme")
 
@@ -167,9 +167,9 @@ jobs:
 
       - name: Request AI review via Janus
         run: |
-          pip install janus-sdk
+          pip install janus-broker
           python -c "
-          from janus_sdk import JanusClient
+          from janus_broker import JanusClient
           client = JanusClient('${{ secrets.JANUS_URL }}',
                               api_key='${{ secrets.JANUS_API_KEY }}')
           client.publish_task({
@@ -187,7 +187,7 @@ jobs:
         run: |
           python -c "
           import time
-          from janus_sdk import JanusClient
+          from janus_broker import JanusClient
           client = JanusClient('${{ secrets.JANUS_URL }}',
                               api_key='${{ secrets.JANUS_API_KEY }}')
           while True:

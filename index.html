@@ -194,7 +194,7 @@
                     <div class="code-dots"><i></i><i></i><i></i></div>
                     <span class="code-label">2. Publish a task (Python SDK)</span>
                 </div>
-<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_sdk</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span>
+<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span>(<span class="tok-s">"http://localhost:8080"</span>, <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span>)
 <span class="tok-d">client</span>.<span class="tok-f">publish_task</span>({

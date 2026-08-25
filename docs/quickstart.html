@@ -469,11 +469,11 @@
     <p>When LLM is not configured, <code>target_type: "intent"</code> falls back to keyword matching (no external dependency). When configured, Janus maps natural language to the best matching capability via the LLM, validates the result against the online agent catalog, then routes deterministically.</p>
 
     <h2 id="install-sdk">5. Install the Python SDK</h2>
-    <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-sdk</span></code></pre>
+    <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-broker</span></code></pre>
 
     <h2 id="publish-task">6. Publish a Task</h2>
     <p>Create a file <code>publish.py</code>:</p>
-    <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+    <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_broker</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
 
@@ -533,7 +533,7 @@
 
     <h2 id="pull-task">7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
-    <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_sdk</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
+    <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_broker</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
 
