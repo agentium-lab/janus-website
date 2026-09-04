@@ -533,6 +533,21 @@
 
     <h2 id="pull-task">7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
+    
+    <h3>Report progress (new in v1.4)</h3>
+    <p>Agents report mid-task progress like a log statement — the Worker injects the callback automatically:</p>
+    <pre><code><span class="tok-k">def</span> <span class="tok-f">process</span>(task, progress):
+    progress(<span class="tok-s">"Analyzing code..."</span>, percent=<span class="tok-n">20</span>)
+    issues = analyze(task.payload)
+    progress(<span class="tok-s">"Fixing issues..."</span>, percent=<span class="tok-n">60</span>)
+    <span class="tok-k">return</span> WorkerResult(output={...})
+
+<span class="tok-c1"># Subscribe from the other side (real-time SSE):</span>
+<span class="tok-k">for</span> evt <span class="tok-k">in</span> client.stream_task(<span class="tok-s">"task-001"</span>):
+    <span class="tok-f">print</span>(<span class="tok-f">f</span><span class="tok-s">'[{evt["payload"].get("percent")}%] {evt["payload"]["message"]}'</span>)
+<span class="tok-c1"># [20%] Analyzing code...</span>
+<span class="tok-c1"># [60%] Fixing issues...</span></code></pre>
+
     <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_broker</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">JanusClient</span>
 
 <span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span>
