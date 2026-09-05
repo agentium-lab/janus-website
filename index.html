@@ -42,11 +42,11 @@
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
         <a href="/docs/quickstart.html" class="hero-badge">
-            <span class="tag">v1.3</span>
+            <span class="tag">v1.5</span>
             Durable agent task broker — seeking early adopters
             <span class="arrow">→</span>
         </a>
-        <h1>Production-Grade<br><span class="grad rotator" data-words="Agent Task Broker|Multi-Protocol Gateway|Production-Grade Orchestration|Durable Delivery Mesh">Agent Task Broker</span></h1>
+        <h1>Durable<br><span class="grad rotator" data-words="Agent Task Broker|Multi-Protocol Gateway|A2A v1.0 Native|Governed Delivery Mesh">Agent Task Broker</span></h1>
         <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no rate-limit blowouts, no policy bypass, full traceability.</p>
         <div class="hero-actions">
             <a href="/docs/quickstart.html" class="btn btn-primary">Get Started in 5 Minutes →</a>
@@ -113,7 +113,7 @@
         <div class="section-head">
             <span class="eyebrow">Capabilities</span>
             <h2>Core Capabilities</h2>
-            <p class="section-sub">Six pillars that turn fragile agent-to-agent calls into a governed, observable, production-grade mesh.</p>
+            <p class="section-sub">Six pillars that turn fragile agent-to-agent calls into a governed, observable, durable mesh.</p>
         </div>
         <div class="feature-grid">
             <div class="feature">
@@ -127,8 +127,8 @@
 
                 <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
-                    <li><strong>New in v1.3:</strong> security hardening — tenant isolation, unified scope enforcement, hardened Helm chart</li>
-                    <li>Runs on just PostgreSQL — NATS is now an optional accelerator</li>
+                    <li><strong>New in v1.5:</strong> A2A v1.0 native REST binding, agent identity binding (key→agent), SSE race fixes, 93.9% test coverage</li>
+                    <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
                     <li>Dual-write persistence: PostgreSQL + NATS (optional)</li>
                     <li>Automatic recovery after agent crashes</li>
                     <li>Idempotent ACK/NACK, no double execution</li>
