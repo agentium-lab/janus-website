@@ -42,7 +42,7 @@
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
         <a href="/docs/quickstart.html" class="hero-badge">
-            <span class="tag">v1.5</span>
+            <span class="tag">v1.6</span>
             Durable agent task broker — seeking early adopters
             <span class="arrow">→</span>
         </a>
@@ -127,7 +127,7 @@
 
                 <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
-                    <li><strong>New in v1.5:</strong> A2A v1.0 native REST binding, agent identity binding (key→agent), SSE race fixes, 93.9% test coverage</li>
+                    <li><strong>New in v1.6:</strong> agent identity enforced at every entrypoint (middleware + service-layer authority overwrite), terminal events never silently dropped, official a2a-go client interop suite in CI, 85% coverage floor</li>
                     <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
                     <li>Dual-write persistence: PostgreSQL + NATS (optional)</li>
                     <li>Automatic recovery after agent crashes</li>
@@ -157,7 +157,7 @@
                 <h3><span class="fi">🔌</span> Multi-Protocol</h3>
                 <ul>
                     <li>HTTP REST API + gRPC</li>
-                    <li>A2A Gateway (Agent Card / Task Send)</li>
+                    <li>A2A v1 subset Gateway — Agent Card, Send/Stream, Get/List/Cancel/Subscribe, verified against the official a2a-go client</li>
                     <li>ACP Gateway (Manifest / Runs) — <em class="dep">deprecated → A2A</em> <span class="dep-note">(Sunset 2026-12-31)</span></li>
                     <li>MCP Gateway (Tool Call / Resource)</li>
                 </ul>

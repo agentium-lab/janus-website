@@ -43,7 +43,7 @@
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
         <a href="/zh/docs/quickstart.html" class="hero-badge">
-            <span class="tag">v1.5</span>
+            <span class="tag">v1.6</span>
             生产级 Agent 任务代理
             <span class="arrow">→</span>
         </a>
@@ -128,7 +128,7 @@
 
                 <h3><span class="fi">🔄</span> 持久投递</h3>
                 <ul>
-                    <li><strong>v1.3 新特性：</strong>安全加固——租户隔离、全协议统一权限、Helm 加固</li>
+                    <li><strong>v1.6 新特性：</strong>全入口 Agent 身份守卫（中间件 + 服务层权威覆写）、终态事件零丢失、官方 a2a-go 客户端互操作测试入 CI、85% 覆盖率门槛</li>
                     <li>仅靠 PostgreSQL 即可运行——NATS 降级为可选加速层</li>
                     <li>任务在 PostgreSQL + NATS 双写持久化（NATS 可选）</li>
                     <li>Agent 崩溃后自动恢复，任务不丢失</li>
@@ -158,7 +158,7 @@
                 <h3><span class="fi">🔌</span> 多协议接入</h3>
                 <ul>
                     <li>HTTP REST API + gRPC</li>
-                    <li>A2A Gateway（Agent Card / Task Send）</li>
+                    <li>A2A v1 子集网关 — 经官方 a2a-go 客户端验证</li>
                     <li>ACP Gateway（Manifest / Runs）— <em class="dep">已弃用 → A2A</em> <span class="dep-note">（Sunset 2026-12-31）</span></li>
                     <li>MCP Gateway（Tool Call / Resource）</li>
                 </ul>
