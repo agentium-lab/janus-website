@@ -128,7 +128,7 @@
 
                 <h3><span class="fi">🔄</span> 持久投递</h3>
                 <ul>
-                    <li><strong>v1.6 新特性：</strong>全入口 Agent 身份守卫（中间件 + 服务层权威覆写）、终态事件零丢失、官方 a2a-go 客户端互操作测试入 CI、85% 覆盖率门槛</li>
+                    <li><strong>v1.6 新特性：</strong>全入口 Agent 身份守卫（中间件 + 服务层权威覆写）、任务状态始终持久；实时通知尽力而为，客户端可通过 GetTask 查询权威终态、官方 a2a-go 客户端互操作测试入 CI、85% 覆盖率门槛</li>
                     <li>仅靠 PostgreSQL 即可运行——NATS 降级为可选加速层</li>
                     <li>任务在 PostgreSQL + NATS 双写持久化（NATS 可选）</li>
                     <li>Agent 崩溃后自动恢复，任务不丢失</li>

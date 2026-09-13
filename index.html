@@ -127,7 +127,7 @@
 
                 <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
-                    <li><strong>New in v1.6:</strong> agent identity enforced at every entrypoint (middleware + service-layer authority overwrite), terminal events never silently dropped, official a2a-go client interop suite in CI, 85% coverage floor</li>
+                    <li><strong>New in v1.6:</strong> agent identity enforced at every entrypoint (middleware + service-layer authority overwrite), task state always durable, notifications best-effort (poll GetTask for authoritative state), official a2a-go client interop suite in CI, 85% coverage floor</li>
                     <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
                     <li>Dual-write persistence: PostgreSQL + NATS (optional)</li>
                     <li>Automatic recovery after agent crashes</li>
