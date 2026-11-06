@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Janus — Durable Agent Broker for Enterprise Agent Networks</title>
-    <meta name="description" content="Reliably hand off tasks between AI agents. No lost tasks, no rate-limit blowouts, no policy bypass, full traceability.">
+    <meta name="description" content="Reliably hand off tasks between AI agents. No lost tasks, no budget surprises, no policy bypass, full traceability.">
     <link rel="icon" type="image/svg+xml" href="assets/janus-mark.svg">
     <link rel="stylesheet" href="assets/style.css?v=20260731">
     <script src="assets/app.js?v=20260731" defer></script>
@@ -24,7 +24,7 @@
             <img src="assets/janus-logo-dark.svg" alt="Janus" height="54">
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="Toggle menu">
             <span></span><span></span><span></span>
         </label>
         <div class="nav-links">
@@ -46,15 +46,15 @@
             Durable agent task broker — generally available
             <span class="arrow">→</span>
         </a>
-        <h1>Durable<br><span class="grad rotator" data-words="Agent Task Broker|Multi-Protocol Gateway|A2A v1.0 Native|Governed Delivery Mesh">Agent Task Broker</span></h1>
-        <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no rate-limit blowouts, no policy bypass, full traceability.</p>
+        <h1>Durable<br><span class="grad">Agent Task Broker</span></h1>
+        <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no budget surprises, no policy bypass, full traceability.</p>
         <div class="hero-actions">
             <a href="/docs/quickstart.html" class="btn btn-primary">Get Started in 5 Minutes →</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
         </div>
         <div class="hero-meta">
-            <span>PostgreSQL + NATS dual-write</span>
-            <span>OpenTelemetry tracing</span>
+            <span>PostgreSQL-durable, NATS optional</span>
+            <span>OpenTelemetry-ready spans</span>
             <span>A2A / MCP / SDK</span>
         </div>
     </div>
@@ -129,7 +129,7 @@
                 <ul>
                     <li><strong>v1.11 GA:</strong> 9/10 external review with no open P1; measured 100 task/s, 495 event/s, publish p95 55ms; PITR business RTO 5.7s; 27/27 assertions across the three-SDK chaos matrix</li>
                     <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
-                    <li>Dual-write persistence: PostgreSQL + NATS (optional)</li>
+                    <li>PostgreSQL transactional state with a transactional outbox; NATS is optional delivery</li>
                     <li>Automatic recovery after agent crashes</li>
                     <li>Idempotent ACK/NACK — at-least-once delivery (external side effects must be idempotent)</li>
                     <li>Auto-retry + dead letter queue + replay</li>
@@ -139,7 +139,7 @@
                 <h3><span class="fi">⚖️</span> Governance</h3>
                 <ul>
                     <li>Policy engine: who can call whom, with what data</li>
-                    <li>Budget: RPM / TPM / concurrency enforced (broker-counted); token & cost are agent-reported visibility</li>
+                    <li>Budget: RPM / TPM / concurrency admission limits per tenant/agent (broker-counted; a Redis outage fails open); token &amp; cost figures are agent-reported visibility, TPM is an admission estimate</li>
                     <li>Human approval for high-risk tasks</li>
                     <li>Full audit trail for every step</li>
                 </ul>
@@ -166,7 +166,7 @@
                 <h3><span class="fi">📊</span> Observability</h3>
                 <ul>
                     <li>Prometheus metrics (16+ core metrics)</li>
-                    <li>OpenTelemetry distributed tracing</li>
+                    <li>Service spans with optional OTLP export (HTTP traceparent propagation: roadmap)</li>
                     <li>Structured JSON logging</li>
                     <li>Pre-built Grafana dashboard</li>
                 </ul>
@@ -204,31 +204,29 @@
                     <div class="code-dots"><i></i><i></i><i></i></div>
                     <span class="code-label">2. Publish a task (Python SDK)</span>
                 </div>
-<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span>
+<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">JanusClient</span><span class="tok-p">,</span> <span class="tok-t">PublishTaskRequest</span>
 
-<span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span>(<span class="tok-s">"http://localhost:8080"</span>, <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span>)
-<span class="tok-d">client</span>.<span class="tok-f">publish_task</span>({
-    <span class="tok-s">"id"</span>: <span class="tok-s">"task-001"</span>,
-    <span class="tok-s">"source_agent"</span>: <span class="tok-s">"product"</span>,
-    <span class="tok-s">"target_type"</span>: <span class="tok-s">"mailbox"</span>,
-    <span class="tok-s">"target_value"</span>: <span class="tok-s">"review-mb"</span>,
-    <span class="tok-s">"envelope"</span>: { ... }
-})</code></pre>
+<span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span>(<span class="tok-s">"http://localhost:8080"</span><span class="tok-p">,</span> <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span><span class="tok-p">,</span> <span class="tok-p">api_key</span><span class="tok-o">=</span><span class="tok-s">"janus_dev_..."</span>)
+
+<span class="tok-d">client</span>.<span class="tok-f">publish_task</span>(<span class="tok-f">PublishTaskRequest</span>(
+    <span class="tok-p">id</span><span class="tok-o">=</span><span class="tok-s">"task-001"</span><span class="tok-p">,</span>
+    <span class="tok-p">source_agent</span><span class="tok-o">=</span><span class="tok-s">"product"</span><span class="tok-p">,</span>
+    <span class="tok-p">target_type</span><span class="tok-o">=</span><span class="tok-s">"capability"</span><span class="tok-p">,</span>
+    <span class="tok-p">target_value</span><span class="tok-o">=</span><span class="tok-s">"code_review"</span><span class="tok-p">,</span>
+))</code></pre>
             </div>
-            <div class="code-window">
-                <div class="code-titlebar">
-                    <div class="code-dots"><i></i><i></i><i></i></div>
-                    <span class="code-label">3. Agent pulls and completes</span>
+            <span class="code-label">3. Agent pulls and completes</span>
                 </div>
-<pre><code><span class="tok-d">result</span> <span class="tok-o">=</span> <span class="tok-d">client</span>.<span class="tok-f">pull_task</span>(<span class="tok-s">"review-mb"</span>, <span class="tok-s">"reviewer"</span>)
-<span class="tok-d">client</span>.<span class="tok-f">start_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>)
+<pre><code><span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">AckRequest</span>
 
-<span class="tok-c"># Process task...</span>
-
-<span class="tok-d">client</span>.<span class="tok-f">ack_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span>, {
-    <span class="tok-s">"lease_id"</span>: <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span>,
-    <span class="tok-s">"result_ref"</span>: <span class="tok-s">"s3://result.json"</span>
-})</code></pre>
+<span class="tok-d">result</span> <span class="tok-o">=</span> <span class="tok-d">client</span>.<span class="tok-f">pull_task</span>(<span class="tok-s">"review-mb"</span><span class="tok-p">,</span> <span class="tok-s">"reviewer"</span>)
+<span class="tok-k">if</span> <span class="tok-d">result</span> <span class="tok-k">is</span> <span class="tok-k">not</span> <span class="tok-d">None</span><span class="tok-p">:</span>  <span class="tok-c"># empty pulls return None</span>
+    <span class="tok-d">client</span>.<span class="tok-f">start_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span><span class="tok-p">,</span> <span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span><span class="tok-p">,</span> <span class="tok-p">agent_id</span><span class="tok-o">=</span><span class="tok-s">"reviewer"</span>)
+    <span class="tok-c"># ...process the task...</span>
+    <span class="tok-d">client</span>.<span class="tok-f">ack_task</span>(<span class="tok-d">result</span>.<span class="tok-d">task</span>.<span class="tok-d">id</span><span class="tok-p">,</span> <span class="tok-f">AckRequest</span>(
+        <span class="tok-p">lease_id</span><span class="tok-o">=</span><span class="tok-d">result</span>.<span class="tok-d">lease</span>.<span class="tok-d">lease_id</span><span class="tok-p">,</span>
+        <span class="tok-p">result_ref</span><span class="tok-o">=</span><span class="tok-s">"s3://result.json"</span><span class="tok-p">,</span> <span class="tok-p">agent_id</span><span class="tok-o">=</span><span class="tok-s">"reviewer"</span><span class="tok-p">,</span>
+    ))</code></pre>
             </div>
         </div>
         <div style="text-align:center; margin-top:2.5rem;">

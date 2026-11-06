@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Janus — 面向企业 Agent 网络的可靠任务代理</title>
-    <meta name="description" content="让不同框架的 Agent 之间可靠地交接任务。不丢任务，不超频限，不越权，全链可追踪。">
+    <meta name="description" content="让不同框架的 Agent 之间可靠地交接任务。不丢任务，预算受控，不越权，全链可追踪。">
     <link rel="icon" type="image/svg+xml" href="../assets/janus-mark.svg">
     <link rel="stylesheet" href="../assets/style.css?v=20260731">
     <script src="../assets/app.js?v=20260731" defer></script>
@@ -43,11 +43,11 @@
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
         <a href="/zh/docs/quickstart.html" class="hero-badge">
-            <span class="tag">v1.6</span>
-            生产级 Agent 任务代理
+            <span class="tag">v1.11 GA</span>
+            生产级 Agent 任务代理——正式 GA
             <span class="arrow">→</span>
         </a>
-        <h1>让 Agent 协作<br><span class="grad rotator" data-words="进入生产环境|可靠的任务交接|多协议统一网关|全链可追踪">进入生产环境</span></h1>
+        <h1>让 Agent 协作<br><span class="grad">进入生产环境</span></h1>
         <p class="hero-subtitle">不同框架的 Agent 之间，可靠地交接任务。<br>不丢任务，不超频限，不越权，全链可追踪。</p>
         <div class="hero-actions">
             <a href="/zh/docs/quickstart.html" class="btn btn-primary">5 分钟快速开始 →</a>
@@ -55,7 +55,7 @@
         </div>
         <div class="hero-meta">
             <span>仅靠 PostgreSQL 即可运行（NATS 可选加速）</span>
-            <span>OpenTelemetry 链路追踪</span>
+            <span>OpenTelemetry 就绪 Span</span>
             <span>A2A / MCP / SDK</span>
         </div>
     </div>
@@ -128,11 +128,11 @@
 
                 <h3><span class="fi">🔄</span> 持久投递</h3>
                 <ul>
-                    <li><strong>v1.6 新特性：</strong>全入口 Agent 身份守卫（中间件 + 服务层权威覆写）、任务状态始终持久；实时通知尽力而为，客户端可通过 GetTask 查询权威终态、官方 a2a-go 客户端互操作测试入 CI、85% 覆盖率门槛</li>
+                    <li><strong>v1.11 GA：</strong>外部评测 9/10 并建议 GA、无开放 P1；PITR 灾备演练、Redis 失败关闭运行期、NATS 流丢失重建、三语言 SDK 六故障混沌矩阵全部入 CI</li>
                     <li>仅靠 PostgreSQL 即可运行——NATS 降级为可选加速层</li>
-                    <li>任务在 PostgreSQL + NATS 双写持久化（NATS 可选）</li>
+                    <li>PostgreSQL 事务状态 + 事务性 Outbox；NATS 为可选投递层</li>
                     <li>Agent 崩溃后自动恢复，任务不丢失</li>
-                    <li>ACK/NACK 幂等，重复提交不重复执行</li>
+                    <li>ACK/NACK 幂等，至少一次投递——Broker 状态不会重复结算，外部副作用需由 worker 幂等</li>
                     <li>自动重试 + 死信队列 + 手动重放</li>
                 </ul>
             </div>
@@ -140,7 +140,7 @@
                 <h3><span class="fi">⚖️</span> 治理控制</h3>
                 <ul>
                     <li>策略引擎：谁能调用谁，能传什么数据</li>
-                    <li>预算控制：RPM / TPM / 并发（成本限额规划中）</li>
+                    <li>预算控制：按租户/智能体的 RPM / TPM / 并发准入限制（Broker 自计数；Redis 故障默认放行；Token/成本为智能体上报的可见性，TPM 为准入估算）</li>
                     <li>人工审批：高风险任务需人工确认</li>
                     <li>全链审计：每一步都有据可查</li>
                 </ul>

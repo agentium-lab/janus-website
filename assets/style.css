@@ -203,6 +203,7 @@ a { color: inherit; }
 
 /* mobile toggle (pure CSS) */
 .nav-toggle { display: none; }
+.nav-toggle-label:focus-visible { outline: 2px solid var(--primary-2); outline-offset: 4px; }
 .nav-toggle-label {
   display: none;
   flex-direction: column;
@@ -319,7 +320,7 @@ section h2 {
 }
 
 /* ---------- hero ---------- */
-.hero { padding: 120px 0 96px; text-align: center; position: relative; }
+.hero { padding: 120px 0 96px; text-align: center; position: relative; overflow: hidden; }
 .hero .container { position: relative; z-index: 1; }
 .hero-glow {
   position: absolute;
@@ -1313,8 +1314,10 @@ pre code {
     opacity: 0;
     transition: max-height 0.4s var(--ease), opacity 0.3s var(--ease), padding 0.3s var(--ease);
     padding-top: 0; padding-bottom: 0;
+    visibility: hidden; /* closed menu leaves the tab order */
   }
   .nav-toggle:checked ~ .nav-links {
+    visibility: visible;
     max-height: 420px;
     opacity: 1;
     padding: 14px;

@@ -22,7 +22,7 @@
             <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
         </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="Toggle menu">
             <span></span><span></span><span></span>
         </label>
         <div class="nav-links">
@@ -96,7 +96,7 @@
     <ul>
         <li><strong>Docker &amp; Docker Compose</strong> (recommended path)</li>
         <li><strong>Python 3.10+</strong> (for the SDK example)</li>
-        <li><em>Or, to build from source:</em> Go 1.21+, PostgreSQL 13+, NATS 2.10+ (JetStream), Redis 7+</li>
+        <li><em>Or, to build from source:</em> Go 1.25+, PostgreSQL 13+, NATS 2.10+ (JetStream, optional — PostgreSQL is the default queue), Redis 7+</li>
     </ul>
 
     <h2 id="get-source">1. Get the Janus Source</h2>

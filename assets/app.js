@@ -485,3 +485,15 @@
   initToTop();
   initTocSpy();
 })();
+
+// Menu toggle: the CSS-checkbox pattern is keyboard-operable via the
+// label (Enter/Space), matching native button semantics.
+document.querySelectorAll('.nav-toggle-label').forEach(function (label) {
+  label.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      var box = document.getElementById('nav-toggle');
+      if (box) box.checked = !box.checked;
+    }
+  });
+});
