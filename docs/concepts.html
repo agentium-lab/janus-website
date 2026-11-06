@@ -248,7 +248,7 @@
     <ul>
         <li>The lease expires after the configured timeout</li>
         <li>The task reverts to <code>pending</code> and becomes available for another agent to pull</li>
-        <li>Idempotent ACK/NACK delivers at-least-once with no duplicate processing</li>
+        <li>Idempotent ACK/NACK gives at-least-once delivery — broker state never double-settles, but external side effects must be idempotent in the worker</li>
     </ul>
 
     <h2>Envelope</h2>

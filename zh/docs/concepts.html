@@ -249,7 +249,7 @@
     <ul>
         <li>租约在配置的超时时间后过期</li>
         <li>任务回到 <code>pending</code> 状态，可被其他 Agent 重新拉取</li>
-        <li>幂等的 ACK/NACK 提供"至少一次"投递，且不会重复处理</li>
+        <li>幂等的 ACK/NACK 提供"至少一次"投递——Broker 状态不会重复结算，但外部副作用必须由 worker 幂等处理</li>
     </ul>
 
     <h2>信封（Envelope）</h2>

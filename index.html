@@ -42,8 +42,8 @@
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
         <a href="/docs/quickstart.html" class="hero-badge">
-            <span class="tag">v1.6</span>
-            Durable agent task broker — seeking early adopters
+            <span class="tag">v1.11 GA</span>
+            Durable agent task broker — generally available
             <span class="arrow">→</span>
         </a>
         <h1>Durable<br><span class="grad rotator" data-words="Agent Task Broker|Multi-Protocol Gateway|A2A v1.0 Native|Governed Delivery Mesh">Agent Task Broker</span></h1>
@@ -95,7 +95,7 @@
             <div class="problem-card">
                 <div class="problem-icon">💰</div>
                 <h3>Invisible Usage</h3>
-                <p>Which team exceeded token budget?</p>
+                <p>Which tenant or agent exceeded the token budget?</p>
                 <div class="solution">→ Token / cost budget control</div>
             </div>
             <div class="problem-card">
@@ -127,11 +127,11 @@
 
                 <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
-                    <li><strong>New in v1.6:</strong> agent identity enforced at every entrypoint (middleware + service-layer authority overwrite), task state always durable, notifications best-effort (poll GetTask for authoritative state), official a2a-go client interop suite in CI, 85% coverage floor</li>
+                    <li><strong>v1.11 GA:</strong> 9/10 external review with no open P1; measured 100 task/s, 495 event/s, publish p95 55ms; PITR business RTO 5.7s; 27/27 assertions across the three-SDK chaos matrix</li>
                     <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
                     <li>Dual-write persistence: PostgreSQL + NATS (optional)</li>
                     <li>Automatic recovery after agent crashes</li>
-                    <li>Idempotent ACK/NACK, no double execution</li>
+                    <li>Idempotent ACK/NACK — at-least-once delivery (external side effects must be idempotent)</li>
                     <li>Auto-retry + dead letter queue + replay</li>
                 </ul>
             </div>
