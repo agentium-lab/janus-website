@@ -1288,6 +1288,45 @@ pre code {
 .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
+
+/* ============================================================
+   ARCHITECTURE DIAGRAM
+   ============================================================ */
+.arch { padding: 88px 0; }
+.arch-grid { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 18px; align-items: stretch; margin-top: 2.5rem; }
+.arch-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.arch-box { background: var(--bg-card, rgba(15,20,38,.7)); border: 1px solid var(--border-2, rgba(255,255,255,.09)); border-radius: var(--radius, 14px); padding: 16px 18px; position: relative; }
+.arch-box h4 { margin: 0 0 6px; font-size: .95rem; letter-spacing: .04em; }
+.arch-box p { margin: 0; color: var(--text-muted, #9aa3b8); font-size: .85rem; line-height: 1.5; }
+.arch-box.janus { border-color: rgba(139,92,246,.45); box-shadow: 0 0 34px rgba(139,92,246,.10) inset; }
+.arch-box.janus h4 { color: var(--primary-2, #a78bfa); }
+.arch-arrow-v { text-align: center; color: var(--primary-2, #a78bfa); font-size: .8rem; line-height: 1; opacity: .85; }
+.arch-arrow-v::before { content: "▼"; }
+.arch-flow { display: flex; align-items: center; gap: 10px; }
+.arch-flow .arch-col:nth-child(1)::after, .arch-flow .arch-col:nth-child(2)::after { content: none; }
+.arch-caption { text-align: center; color: var(--text-muted, #9aa3b8); font-size: .88rem; margin-top: 1.6rem; }
+.arch-caption code { background: rgba(139,92,246,.12); border-radius: 6px; padding: 1px 7px; font-size: .82em; }
+@media (max-width: 860px) {
+  .arch-grid { grid-template-columns: 1fr; }
+  .arch-side-arrow { display: none; }
+}
+.arch-side-arrow { align-self: center; color: var(--primary-2, #a78bfa); font-size: 1.15rem; opacity: .85; }
+
+/* ============================================================
+   EVIDENCE
+   ============================================================ */
+.evidence { padding: 88px 0; background: rgba(10, 15, 30, .35); border-top: 1px solid var(--border-2, rgba(255,255,255,.08)); border-bottom: 1px solid var(--border-2, rgba(255,255,255,.08)); }
+.evidence-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 2.5rem; }
+.ev-card { background: var(--bg-card, rgba(15,20,38,.7)); border: 1px solid var(--border-2, rgba(255,255,255,.09)); border-radius: var(--radius, 14px); padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.ev-card h4 { margin: 0; font-size: .98rem; }
+.ev-card .ev-num { color: var(--primary-2, #a78bfa); font-weight: 700; font-size: 1.3rem; }
+.ev-card p { margin: 0; color: var(--text-muted, #9aa3b8); font-size: .85rem; line-height: 1.55; }
+.ev-card a.ev-link { margin-top: auto; font-size: .8rem; color: var(--primary-2, #a78bfa); text-decoration: none; }
+.ev-card a.ev-link:hover { text-decoration: underline; }
+.ev-foot { text-align: center; color: var(--text-muted, #9aa3b8); font-size: .85rem; margin-top: 2rem; }
+@media (max-width: 980px) { .evidence-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .evidence-grid { grid-template-columns: 1fr; } }
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */

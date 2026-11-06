@@ -108,6 +108,59 @@
     </div>
 </section>
 
+
+<section class="arch" id="architecture">
+    <div class="container">
+        <div class="section-head">
+            <span class="eyebrow">Architecture</span>
+            <h2>One broker, three planes</h2>
+            <p class="section-sub">Agents talk to Janus; Janus owns durability; PostgreSQL is the single source of truth.</p>
+        </div>
+        <div class="arch-grid">
+            <div class="arch-col">
+                <div class="arch-box">
+                    <h4>AI AGENTS</h4>
+                    <p>LangGraph · AutoGen · CrewAI · MCP tools · custom runtimes — any A2A/SDK/gRPC client</p>
+                </div>
+                <div class="arch-arrow-v"></div>
+                <div class="arch-box">
+                    <p>submit · pull · progress · ack — with leases, budgets, and identity enforced in between</p>
+                </div>
+            </div>
+            <div class="arch-side-arrow">⇄</div>
+            <div class="arch-col">
+                <div class="arch-box janus">
+                    <h4>INGRESS</h4>
+                    <p>A2A v1 gateway · MCP gateway · HTTP REST · gRPC — auth, scopes, agent-identity binding</p>
+                </div>
+                <div class="arch-arrow-v"></div>
+                <div class="arch-box janus">
+                    <h4>SERVICES</h4>
+                    <p>Task state machine · policy &amp; approval · budgets &amp; ledger · routing &amp; intent · audit</p>
+                </div>
+                <div class="arch-arrow-v"></div>
+                <div class="arch-box janus">
+                    <h4>WORKERS</h4>
+                    <p>Transactional outbox publisher · event projector · lease &amp; retry scanners · heartbeat sweeper</p>
+                </div>
+            </div>
+            <div class="arch-side-arrow">⇄</div>
+            <div class="arch-col">
+                <div class="arch-box">
+                    <h4>POSTGRESQL</h4>
+                    <p>Authoritative state + transactional outbox — accepted ≠ queued, replay-safe audit</p>
+                </div>
+                <div class="arch-arrow-v"></div>
+                <div class="arch-box">
+                    <h4>NATS · REDIS</h4>
+                    <p>JetStream optional delivery plane · Redis heartbeat &amp; rate-limit cache (no durable facts)</p>
+                </div>
+            </div>
+        </div>
+        <p class="arch-caption">State changes commit to PostgreSQL first; the outbox publishes to NATS after commit — <code>PG state</code> is always the recovery source.</p>
+    </div>
+</section>
+
 <section class="features">
     <div class="container">
         <div class="section-head">
@@ -127,8 +180,7 @@
 
                 <h3><span class="fi">🔄</span> Durable Delivery</h3>
                 <ul>
-                    <li><strong>v1.11 GA:</strong> 9/10 external review with no open P1; measured 100 task/s, 495 event/s, publish p95 55ms; PITR business RTO 5.7s; 27/27 assertions across the three-SDK chaos matrix</li>
-                    <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
+                                        <li>PostgreSQL-only mode (CI-verified without Redis) — NATS optional accelerator</li>
                     <li>PostgreSQL transactional state with a transactional outbox; NATS is optional delivery</li>
                     <li>Automatic recovery after agent crashes</li>
                     <li>Idempotent ACK/NACK — at-least-once delivery (external side effects must be idempotent)</li>
@@ -259,6 +311,56 @@
                 <p class="scenario-detail">Auto-scan for vulnerabilities and leaked credentials, high-risk changes require approval</p>
             </div>
         </div>
+    </div>
+</section>
+
+
+<section class="evidence" id="evidence">
+    <div class="container">
+        <div class="section-head">
+            <span class="eyebrow">Reliability Evidence</span>
+            <h2>Every claim has a run behind it</h2>
+            <p class="section-sub">Drills execute against real PostgreSQL / NATS / Redis — in CI, on every nightly, at a pinned SHA.</p>
+        </div>
+        <div class="evidence-grid">
+            <div class="ev-card">
+                <div class="ev-num">v1.11.0</div>
+                <h4>GA release</h4>
+                <p>Tagged <code>018bc0e</code>; gates on the tagged tree: make verify green, coverage 92.6% ≥ 90% three consecutive runs, helm lint clean.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/releases/tag/v1.11.0" target="_blank" rel="noopener">release artifacts →</a>
+            </div>
+            <div class="ev-card">
+                <div class="ev-num">27/27</div>
+                <h4>SDK chaos matrix</h4>
+                <p>Six fault cases — eof · network-cut · lease-lost · ack-failure · 90s · stop — × Go / Python / TypeScript, with verified late-ACK rejection and exactly-once settlement.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/sdk_chaos_matrix.sh" target="_blank" rel="noopener">drill source →</a>
+            </div>
+            <div class="ev-card">
+                <div class="ev-num">5.7s</div>
+                <h4>PITR business RTO</h4>
+                <p>One clock from disaster (primary killed) to WAL-era <em>and</em> new tasks pulled &amp; settled on the restored cluster; the WAL-only task must settle or the drill fails.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/dr_ga10_pitr.sh" target="_blank" rel="noopener">drill source →</a>
+            </div>
+            <div class="ev-card">
+                <div class="ev-num">0 half-writes</div>
+                <h4>Redis fail-closed runtime</h4>
+                <p>Budget-gated pull allowed → Redis killed → pull rejected with zero half-writes (task stays queued, no attempts) → recovery re-allows. Four-cell driver matrix re-runs nightly.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">drill source →</a>
+            </div>
+            <div class="ev-card">
+                <div class="ev-num">100 t/s · 495 ev/s</div>
+                <h4>Sustained load (measured)</h4>
+                <p>PG queue driver, 120s window, 8 publishers / 2,000 mailboxes / 32 consumers: publish p95 55ms, warm handoff 32ms. In-window pull p95 218ms — recorded as the <em>accepted performance boundary</em> on the test hardware, not as meeting the 100ms target.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">drill source →</a>
+            </div>
+            <div class="ev-card">
+                <div class="ev-num">CI · Nightly</div>
+                <h4>Continuously re-proven</h4>
+                <p>Unit + race gates on every push; the drills above plus NATS stream-loss rebuild run on the nightly schedule against the moving main.</p>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/actions/workflows/ci.yml" target="_blank" rel="noopener">CI history →</a>
+            </div>
+        </div>
+        <p class="ev-foot">Delivery semantics: at-least-once — broker state never double-settles; external side effects must be idempotent.</p>
     </div>
 </section>
 
