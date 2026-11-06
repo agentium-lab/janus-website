@@ -1293,7 +1293,7 @@ pre code {
    ARCHITECTURE DIAGRAM
    ============================================================ */
 .arch { padding: 88px 0; }
-.arch-grid { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 18px; align-items: stretch; margin-top: 2.5rem; }
+.arch-grid { display: grid; grid-template-columns: 1fr auto 1.5fr auto 1fr; gap: 14px; align-items: stretch; margin-top: 2.5rem; }
 .arch-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .arch-box { background: var(--bg-card, rgba(15,20,38,.7)); border: 1px solid var(--border-2, rgba(255,255,255,.09)); border-radius: var(--radius, 14px); padding: 16px 18px; position: relative; }
 .arch-box h4 { margin: 0 0 6px; font-size: .95rem; letter-spacing: .04em; }
@@ -1311,6 +1311,36 @@ pre code {
   .arch-side-arrow { display: none; }
 }
 .arch-side-arrow { align-self: center; color: var(--primary-2, #a78bfa); font-size: 1.15rem; opacity: .85; }
+
+
+
+/* ============================================================
+   PAGE-LEVEL OVERFLOW CONTAINMENT (docs & scenario pages)
+   ============================================================ */
+html, body { overflow-x: clip; }
+pre { max-width: 100%; overflow-x: auto; }
+.container { min-width: 0; }
+table { display: block; max-width: 100%; overflow-x: auto; }
+img, svg, video { max-width: 100%; height: auto; }
+
+/* ============================================================
+   SDK SECTION
+   ============================================================ */
+.sdks { padding: 88px 0; }
+.sdk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 2.5rem; }
+.sdk-card { background: var(--bg-card, rgba(15,20,38,.7)); border: 1px solid var(--border-2, rgba(255,255,255,.09)); border-radius: var(--radius, 14px); padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sdk-card h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.sdk-lang { font-size: .68rem; letter-spacing: .08em; color: var(--primary-2, #a78bfa); border: 1px solid rgba(139,92,246,.35); border-radius: 999px; padding: 2px 9px; }
+.sdk-install { font-family: var(--mono, ui-monospace, monospace); font-size: .8rem; background: rgba(0,0,0,.35); border-radius: 8px; padding: 8px 12px; color: #c8d0e8; overflow-x: auto; white-space: nowrap; }
+.sdk-card pre { margin: 0; background: rgba(0,0,0,.35); border-radius: 8px; padding: 12px; font-size: .78rem; line-height: 1.55; overflow-x: auto; max-width: 100%; }
+.sdk-card pre code { white-space: pre; }
+.sdk-card ul { margin: 0; padding-left: 18px; color: var(--text-muted, #9aa3b8); font-size: .84rem; line-height: 1.7; }
+.sdk-links { margin-top: auto; display: flex; gap: 14px; font-size: .8rem; }
+.sdk-links a { color: var(--primary-2, #a78bfa); text-decoration: none; }
+.sdk-links a:hover { text-decoration: underline; }
+.sdk-foot { text-align: center; color: var(--text-muted, #9aa3b8); font-size: .85rem; margin-top: 1.8rem; }
+@media (max-width: 980px) { .sdk-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .sdk-grid { grid-template-columns: 1fr; } }
 
 /* ============================================================
    EVIDENCE

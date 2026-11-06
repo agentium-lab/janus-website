@@ -267,7 +267,10 @@
     <span class="tok-p">target_value</span><span class="tok-o">=</span><span class="tok-s">"code_review"</span><span class="tok-p">,</span>
 ))</code></pre>
             </div>
-            <span class="code-label">3. Agent pulls and completes</span>
+            <div class="code-window">
+                <div class="code-titlebar">
+                    <div class="code-dots"><i></i><i></i><i></i></div>
+                    <span class="code-label">3. Agent pulls and completes</span>
                 </div>
 <pre><code><span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">AckRequest</span>
 
@@ -350,7 +353,7 @@
             <div class="ev-card">
                 <div class="ev-num">100 t/s · 495 ev/s</div>
                 <h4>Sustained load (measured)</h4>
-                <p>PG queue driver, 120s window, 8 publishers / 2,000 mailboxes / 32 consumers: publish p95 55ms, warm handoff 32ms. In-window pull p95 218ms — recorded as the <em>accepted performance boundary</em> on the test hardware, not as meeting the 100ms target.</p>
+                <p>PG queue driver, 120s window, 8 publishers / 2,000 mailboxes / 32 consumers: publish p95 55ms, warm handoff 32ms. Host: a shared dev machine (WSL2) — Ryzen 7 7840H 8c/16t, 16 GB RAM — with the broker, PostgreSQL, NATS and Redis co-located. In-window pull p95 218ms — recorded as the <em>accepted performance boundary</em> on that hardware, not as meeting the 100ms target.</p>
                 <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">drill source →</a>
             </div>
             <div class="ev-card">
@@ -361,6 +364,71 @@
             </div>
         </div>
         <p class="ev-foot">Delivery semantics: at-least-once — broker state never double-settles; external side effects must be idempotent.</p>
+    </div>
+</section>
+
+
+<section class="sdks" id="sdks">
+    <div class="container">
+        <div class="section-head">
+            <span class="eyebrow">SDKs</span>
+            <h2>First-class SDKs in three languages</h2>
+            <p class="section-sub">Same API surface, same conformance fixtures, same six-fault chaos matrix — pick your language.</p>
+        </div>
+        <div class="sdk-grid">
+            <div class="sdk-card">
+                <h3>Go <span class="sdk-lang">39 METHODS</span></h3>
+                <div class="sdk-install">go get github.com/agentium-lab/Janus/sdk/go</div>
+<pre><code>client := janus.NewClient(janus.Config{
+    BaseURL: "http://localhost:8080",
+    TenantID: "acme", APIKey: "janus_dev_...",
+})
+client.PublishTask(ctx, janus.PublishTaskRequest{
+    ID: "task-001", SourceAgent: "product",
+    TargetType: "capability", TargetValue: "code_review",
+})</code></pre>
+                <ul>
+                    <li>Worker helper: heartbeats, lease renewal, at-least-once loop</li>
+                    <li>Proto-parity with the gRPC surface</li>
+                </ul>
+                <div class="sdk-links"><a href="/docs/sdk.html">SDK guide →</a><a href="https://pkg.go.dev/github.com/agentium-lab/Janus/sdk/go" target="_blank" rel="noopener">pkg.go.dev ↗</a></div>
+            </div>
+            <div class="sdk-card">
+                <h3>Python <span class="sdk-lang">34 METHODS</span></h3>
+                <div class="sdk-install">pip install janus-broker</div>
+<pre><code>client = JanusClient("http://localhost:8080",
+    tenant_id="acme", api_key="janus_dev_...")
+
+client.publish_task(PublishTaskRequest(
+    id="task-001", source_agent="product",
+    target_type="capability", target_value="code_review",
+))</code></pre>
+                <ul>
+                    <li>Request models <em>or</em> plain dicts — both validate &amp; serialize identically</li>
+                    <li>JanusWorker with progress callbacks and graceful stop</li>
+                </ul>
+                <div class="sdk-links"><a href="/docs/sdk.html">SDK guide →</a><a href="https://pypi.org/project/janus-broker/" target="_blank" rel="noopener">PyPI ↗</a></div>
+            </div>
+            <div class="sdk-card">
+                <h3>TypeScript <span class="sdk-lang">30 METHODS</span></h3>
+                <div class="sdk-install">npm i @agentium-lab/janus-sdk</div>
+<pre><code>const client = new Client({
+    baseURL: "http://localhost:8080",
+    tenantID: "acme", apiKey: "janus_dev_...",
+});
+
+await client.publishTask({
+    id: "task-001", sourceAgent: "product",
+    targetType: "capability", targetValue: "code_review",
+});</code></pre>
+                <ul>
+                    <li>Envelope auto-constructed from flat fields</li>
+                    <li>Worker with abort-signal lease handling</li>
+                </ul>
+                <div class="sdk-links"><a href="/docs/sdk.html">SDK guide →</a><a href="https://www.npmjs.com/package/@agentium-lab/janus-sdk" target="_blank" rel="noopener">npm ↗</a></div>
+            </div>
+        </div>
+        <p class="sdk-foot">All three pass the same conformance fixtures (<code>sdk/conformance/</code>) and the same chaos matrix: eof · network-cut · lease-lost · ack-failure · 90s · stop — 27/27 assertions.</p>
     </div>
 </section>
 
