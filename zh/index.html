@@ -353,7 +353,7 @@
             <div class="ev-card">
                 <div class="ev-num">100 t/s · 495 ev/s</div>
                 <h4>持续负载(实测)</h4>
-                <p>PG 队列、120 秒窗口、8 发布者 / 2,000 邮箱 / 32 消费者:发布 p95 55ms、热交接 32ms。测试机:共享开发机(WSL2)——Ryzen 7 7840H 8核16线程、16 GB 内存,Broker 与 PostgreSQL、NATS、Redis 同机。负载期拉取 p95 218ms——如实记录为该硬件上<em>已接受的性能边界</em>,不声称达到 100ms 目标。</p>
+                <p>PG 队列、120 秒窗口、8 发布者 / 2,000 邮箱 / 32 消费者：发布 p95 55ms、热交接 32ms——Ryzen 7 7840H 8核16线程、16 GB 内存，Broker 与 PostgreSQL、NATS、Redis 同机。负载期拉取 p95 218ms。</p>
                 <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">演练源码 →</a>
             </div>
             <div class="ev-card">
