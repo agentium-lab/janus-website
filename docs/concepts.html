@@ -288,7 +288,7 @@
     </ul>
 
     <h2>Durability Model</h2>
-    <p>Tasks are dual-written to PostgreSQL (source of truth) and NATS JetStream (fast delivery). If the broker process crashes mid-flight:</p>
+    <p>PostgreSQL is the authoritative store: task state commits inside the business transaction, and a transactional outbox publishes to NATS (optional delivery plane) only after commit. If the broker process crashes mid-flight:</p>
     <ul>
         <li>In-flight tasks that were claimed but not ACKed have their leases expire</li>
         <li>The outbox ensures no tasks are lost during broker crashes</li>
@@ -323,7 +323,7 @@
                 <div class="footer-col">
                     <h4>Community</h4>
                     <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
-                    <a href="/zh/">中文</a>
+                    <a href="/zh/docs/concepts.html">中文</a>
                 </div>
             </div>
         </div>

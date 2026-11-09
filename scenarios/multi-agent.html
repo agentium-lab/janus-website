@@ -61,8 +61,10 @@
 
     <h2>LangGraph Integration</h2>
     <div class="framework-card">
-        <p>LangGraph agents publish tasks to Janus mailboxes and pull results from downstream agents. The Janus node acts as a reliable handoff between graph steps:</p>
-        <pre><code>from langgraph.graph import StateGraph
+        <p><em>Integration pattern (conceptual)</em> — LangGraph agents publish tasks to Janus mailboxes and pull results from downstream agents; the Janus node acts as a reliable handoff between graph steps. Verified runnable examples ship with the SDK repo; this snippet shows the wiring shape.</p>
+        <pre><code>from typing import TypedDict  # noqa: F401  (state type below)
+
+from langgraph.graph import StateGraph
 from janus_broker import JanusClient
 
 client = JanusClient("http://janus:8080", tenant_id="acme")
@@ -93,7 +95,7 @@ graph.add_edge("review_node", "collect_node")</code></pre>
 
     <h2>AutoGen Integration</h2>
     <div class="framework-card">
-        <p>AutoGen agents use Janus as a message bus for async team collaboration:</p>
+        <p><em>Integration pattern (conceptual)</em> — AutoGen (0.2.x API) agents use Janus as a message bus for async team collaboration.</p>
         <pre><code>from autogen import AssistantAgent, UserProxyAgent
 from janus_broker import JanusClient
 
@@ -123,8 +125,8 @@ coder = JanusAgent(name="coder", llm_config=llm_config)</code></pre>
 
     <h2>CrewAI Integration</h2>
     <div class="framework-card">
-        <p>CrewAI agents use Janus for persistent task handoff between crew members:</p>
-        <pre><code>from crewai import Agent, Task, Crew
+        <p><em>Integration pattern (conceptual)</em> — CrewAI agents use Janus for persistent task handoff between crew members (CrewAI 0.x API).</p>
+        <pre><code>from crewai import Agent, Task, Crew, Process
 from janus_broker import JanusClient
 
 client = JanusClient("http://janus:8080", tenant_id="acme")
@@ -144,11 +146,12 @@ class JanusCrewAgent(Agent):
         result = client.pull_task(f"{self.role}-mb", self.role)
         return result.task.envelope.payload
 
-# Crew with Janus resilience
+# Crew with Janus resilience — reviewer/coder/tester are Agent
+# instances and *_task are Task instances defined by your crew setup
 crew = Crew(
     agents=[reviewer, coder, tester],
     tasks=[review_task, code_task, test_task],
-    process=Process.sequential
+    process=Process.sequential,
 )</code></pre>
     </div>
 
@@ -166,37 +169,57 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Request AI review via Janus
+        env:
+          JANUS_URL: ${{ secrets.JANUS_URL }}
+          JANUS_API_KEY: ${{ secrets.JANUS_API_KEY }}
         run: |
           pip install janus-broker
-          python -c "
-          from janus_broker import JanusClient
-          client = JanusClient('${{ secrets.JANUS_URL }}',
-                              api_key='${{ secrets.JANUS_API_KEY }}')
-          client.publish_task({
-              'source_agent': 'github-actions',
-              'target_type': 'mailbox',
-              'target_value': 'review-mb',
-              'envelope': {
-                  'type': 'pr_review',
-                  'payload': {'pr': '${{ github.event.pull_request.html_url }}'}
-              }
-          })
-          "
+          python - &lt;&lt;'EOF'
+          import os
 
-      - name: Wait for review result
+          from janus_broker import JanusClient, PublishTaskRequest
+
+          client = JanusClient(os.environ["JANUS_URL"], tenant_id="acme",
+                               api_key=os.environ["JANUS_API_KEY"])
+          # Tie the task to THIS pull request so concurrent PRs never mix
+          task_id = "review-pr-${{ github.event.pull_request.number }}"
+          client.publish_task(PublishTaskRequest(
+              id=task_id,
+              source_agent="github-actions",
+              target_type="mailbox",
+              target_value="review-mb",
+          ))
+          print("published", task_id)
+          EOF
+
+      - name: Wait for review result (10 min budget)
+        env:
+          JANUS_URL: ${{ secrets.JANUS_URL }}
+          JANUS_API_KEY: ${{ secrets.JANUS_API_KEY }}
         run: |
-          python -c "
-          import time
-          from janus_broker import JanusClient
-          client = JanusClient('${{ secrets.JANUS_URL }}',
-                              api_key='${{ secrets.JANUS_API_KEY }}')
-          while True:
-              result = client.pull_task('github-results-mb', 'github-actions')
-              if result:
-                  print('Review complete:', result.task.envelope.payload)
-                  break
+          python - &lt;&lt;'EOF'
+          import os, sys, time
+
+          from janus_broker import AckRequest, JanusClient
+
+          client = JanusClient(os.environ["JANUS_URL"], tenant_id="acme",
+                               api_key=os.environ["JANUS_API_KEY"])
+          task_id = "review-pr-${{ github.event.pull_request.number }}"
+          deadline = time.time() + 600  # total wait budget: 10 minutes
+
+          while time.time() &lt; deadline:
+              task = client.get_task(task_id)
+              if task.status == "completed":
+                  print("review complete:", task.result_ref)
+                  sys.exit(0)
+              if task.status in ("failed", "dead_lettered", "cancelled"):
+                  print("review failed:", task.status, file=sys.stderr)
+                  sys.exit(1)  # fail the CI job on task failure
               time.sleep(5)
-          "</code></pre>
+
+          print("timed out waiting for", task_id, file=sys.stderr)
+          sys.exit(124)  # explicit timeout exit code
+          EOF</code></pre>
     </div>
 
     <h2>What Janus Provides</h2>
@@ -233,7 +256,7 @@ jobs:
                 <div class="footer-col">
                     <h4>Community</h4>
                     <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
-                    <a href="/zh/">中文</a>
+                    <a href="/zh/scenarios/multi-agent.html">中文</a>
                 </div>
             </div>
         </div>

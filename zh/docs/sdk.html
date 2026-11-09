@@ -45,6 +45,7 @@
 <div class="doc-content">
     <span class="eyebrow">文档</span>
     <h1>SDK 指南</h1>
+    <p class="section-sub">示例适用于 SDK 发布版 <strong>1.11.0</strong>（Go module / PyPI / npm）。所有片段假定已导出 <code>JANUS_API_KEY</code>，Janus 运行于 <code>http://localhost:8080</code>，租户 <code>acme</code>。</p>
     <p>Janus 提供 Go、Python 与 TypeScript 的一等公民 SDK。三者实现相同的核心操作：创建邮箱、发布任务、拉取任务、确认完成。</p>
 
     <h2>Go SDK</h2>
@@ -53,9 +54,18 @@
         <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">get</span><span class="tok-d"> </span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus/sdk/go</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">import</span><span class="tok-d"> janus </span><span class="tok-s">&quot;github.com/agentium-lab/Janus/sdk/go&quot;</span>
+        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"os"</span>
 
-<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">:</span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">NewClient</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-f">WithTenant</span><span class="tok-o">(</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span><span class="tok-o">)</span></code></pre>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-s">"github.com/agentium-lab/Janus/sdk/go"</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"github.com/agentium-lab/Janus/core"</span>
+<span class="tok-d">)</span>
+
+<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-d">:</span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-f">NewClient</span><span class="tok-d">(</span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-t">Config</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">BaseURL</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"http://localhost:8080"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TenantID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">APIKey</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">os</span><span class="tok-d">.</span><span class="tok-f">Getenv</span><span class="tok-d">(</span><span class="tok-s">"JANUS_API_KEY"</span><span class="tok-d">)</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
 
         <p><strong>关键方法（共 39 个）</strong></p>
         <div class="method-grid">
@@ -68,14 +78,16 @@
             <div class="method-item"><div class="method-name">ListTasks</div><div class="method-desc">查询任务</div></div>
             <div class="method-item"><div class="method-name">ResolveIntent</div><div class="method-desc">自然语言 → 能力</div></div>
         </div>
-        <pre><code><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">发布任务</span>
-<span class="tok-d">resp</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">err</span><span class="tok-d"> </span><span class="tok-o">:</span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">PublishTask</span><span class="tok-d">(</span><span class="tok-d">ctx</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-d">amp</span><span class="tok-d">;</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">PublishRequest</span><span class="tok-d">{</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">SourceAgent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">TargetType</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">TargetValue</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Envelope</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">Envelope</span><span class="tok-d">{</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Type</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">Payload</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">json</span><span class="tok-o">.</span><span class="tok-d">RawMessage</span><span class="tok-d">(</span><span class="tok-d">`</span><span class="tok-d">{</span><span class="tok-s">&quot;pr_url&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;...&quot;</span><span class="tok-d">}</span><span class="tok-d">`</span><span class="tok-d">)</span><span class="tok-d">,</span>
+        <pre><code><span class="tok-c">// 发布任务</span>
+<span class="tok-d">resp</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">err</span><span class="tok-d"> </span><span class="tok-d">:</span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">PublishTask</span><span class="tok-d">(</span><span class="tok-d">ctx</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-t">PublishTaskRequest</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">ID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"task-001"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">SourceAgent</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TargetType</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TargetValue</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">Envelope</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">core</span><span class="tok-d">.</span><span class="tok-t">TaskEnvelope</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TaskID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"task-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">TenantID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">SourceAgent</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">Target</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">core</span><span class="tok-d">.</span><span class="tok-t">Target</span><span class="tok-d">{</span><span class="tok-t">Type</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">Value</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">Payload</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">core</span><span class="tok-d">.</span><span class="tok-t">Payload</span><span class="tok-d">{</span><span class="tok-t">Type</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">Content</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">`</span><span class="tok-d">{</span><span class="tok-s">"pr_url"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"..."</span><span class="tok-d">}</span><span class="tok-d">`</span><span class="tok-d">}</span><span class="tok-d">,</span>
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">,</span>
 <span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
     </div>
@@ -83,64 +95,36 @@
     <h2>Python SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-broker</span></code></pre>
+        <pre><code><span class="tok-d">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium</span><span class="tok-d">-</span><span class="tok-d">lab</span><span class="tok-d">/</span><span class="tok-d">janus</span><span class="tok-d">-</span><span class="tok-d">sdk</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-d">janus_broker</span><span class="tok-d"> </span><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-t">Client</span>
-<span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-f">Client</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-o">=</span><span class="tok-s">&quot;acme&quot;</span><span class="tok-o">)</span></code></pre>
-
-        <p><strong>关键方法（共 34 个）</strong></p>
-        <div class="method-grid">
-            <div class="method-item"><div class="method-name">create_mailbox</div><div class="method-desc">创建邮箱</div></div>
-            <div class="method-item"><div class="method-name">publish_task</div><div class="method-desc">发布任务</div></div>
-            <div class="method-item"><div class="method-name">pull_task</div><div class="method-desc">拉取下一个任务</div></div>
-            <div class="method-item"><div class="method-name">start_task</div><div class="method-desc">开始处理并获取租约</div></div>
-            <div class="method-item"><div class="method-name">ack_task</div><div class="method-desc">确认完成</div></div>
-            <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">否定确认</div></div>
-            <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">列出/过滤任务</div></div>
-        </div>
-        <pre><code><span class="tok-c"># 创建邮箱</span>
-<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">create_mailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-o">=</span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d">)</span>
+        <pre><code><span class="tok-c"># 创建邮箱（请求模型；也接受普通 dict）</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">create_mailbox</span><span class="tok-d">(</span><span class="tok-f">CreateMailboxRequest</span><span class="tok-d">(</span><span class="tok-d">id</span><span class="tok-d">=</span><span class="tok-s">"review-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"reviewer"</span><span class="tok-d">)</span><span class="tok-d">)</span>
 
 <span class="tok-c"># 发布任务</span>
-<span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;id&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;task-001&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;source_agent&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;target_value&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">&quot;envelope&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">&quot;type&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">&quot;payload&quot;</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-d">}</span><span class="tok-d">}</span>
-<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
+<span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-f">PublishTaskRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-d">=</span><span class="tok-s">"task-001"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">source_agent</span><span class="tok-d">=</span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">target_type</span><span class="tok-d">=</span><span class="tok-s">"capability"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">target_value</span><span class="tok-d">=</span><span class="tok-s">"code_review"</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
     </div>
 
     <h2>TypeScript SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-broker</span></code></pre>
+        <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-sdk</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
-        <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-t">Client</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-d"> </span><span class="tok-k">from</span><span class="tok-d"> </span><span class="tok-s">&quot;@agentium-lab/janus-sdk&quot;</span><span class="tok-d">;</span>
-<span class="tok-d">const</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">new</span><span class="tok-d"> </span><span class="tok-f">Client</span><span class="tok-o">(</span><span class="tok-s">&quot;http://localhost:8080&quot;</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-d"> </span><span class="tok-d">tenantId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;acme&quot;</span><span class="tok-d"> </span><span class="tok-o">}</span><span class="tok-o">)</span><span class="tok-d">;</span></code></pre>
+        <pre><code><span class="tok-c">// 创建邮箱</span>
+<span class="tok-k">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">createMailbox</span><span class="tok-d">(</span><span class="tok-s">"review-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">agentId</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reviewer"</span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>
 
-        <p><strong>关键方法（共 30 个）</strong></p>
-        <div class="method-grid">
-            <div class="method-item"><div class="method-name">createMailbox</div><div class="method-desc">创建邮箱</div></div>
-            <div class="method-item"><div class="method-name">publishTask</div><div class="method-desc">发布任务</div></div>
-            <div class="method-item"><div class="method-name">pullTask</div><div class="method-desc">拉取下一个任务</div></div>
-            <div class="method-item"><div class="method-name">startTask</div><div class="method-desc">开始处理并获取租约</div></div>
-            <div class="method-item"><div class="method-name">ackTask</div><div class="method-desc">确认完成</div></div>
-            <div class="method-item"><div class="method-name">nackTask</div><div class="method-desc">否定确认</div></div>
-            <div class="method-item"><div class="method-name">listTasks</div><div class="method-desc">列出/过滤任务</div></div>
-        </div>
-        <pre><code><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">创建邮箱</span>
-<span class="tok-d">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">createMailbox</span><span class="tok-d">(</span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">agentId</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;reviewer&quot;</span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>
-
-<span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d"> </span><span class="tok-d">发布任务</span>
-<span class="tok-d">const</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-d">publishTask</span><span class="tok-d">(</span><span class="tok-d">{</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;task-001&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">sourceAgent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;product&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetType</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;mailbox&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetValue</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;review-mb&quot;</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">envelope</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">type</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;code_review&quot;</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">payload</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-o">.</span><span class="tok-d">}</span><span class="tok-d"> </span><span class="tok-d">}</span>
+<span class="tok-c">// 发布任务</span>
+<span class="tok-k">const</span><span class="tok-d"> </span><span class="tok-d">resp</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-k">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publishTask</span><span class="tok-d">(</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"task-001"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">sourceAgent</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetType</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"mailbox"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetValue</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"review-mb"</span><span class="tok-d">,</span>
 <span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span></code></pre>
     </div>
 
@@ -184,7 +168,7 @@
                 <div class="footer-col">
                     <h4>社区</h4>
                     <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
-                    <a href="/">English</a>
+                    <a href="/docs/sdk.html">English</a>
                 </div>
             </div>
         </div>
