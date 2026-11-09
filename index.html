@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Janus — Durable Agent Broker for Enterprise Agent Networks</title>
-    <meta name="description" content="Reliably hand off tasks between AI agents. No lost tasks, no budget surprises, no policy bypass, full traceability.">
+    <meta name="description" content="Reliably hand off tasks between AI agents. No lost tasks, usage visibility with admission controls, no policy bypass, full traceability.">
     <link rel="icon" type="image/svg+xml" href="assets/janus-mark.svg">
     <link rel="stylesheet" href="assets/style.css?v=20260731">
     <script src="assets/app.js?v=20260731" defer></script>
@@ -41,16 +41,17 @@
 <section class="hero">
     <span class="hero-glow" aria-hidden="true"></span>
     <div class="container">
-        <a href="/docs/quickstart.html" class="hero-badge">
+        <a href="https://github.com/agentium-lab/Janus/releases/tag/v1.11.0" class="hero-badge" target="_blank" rel="noopener">
             <span class="tag">v1.11 GA</span>
             Durable agent task broker — generally available
             <span class="arrow">→</span>
         </a>
         <h1>Durable<br><span class="grad">Agent Task Broker</span></h1>
-        <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, no budget surprises, no policy bypass, full traceability.</p>
+        <p class="hero-subtitle">Reliably hand off tasks between AI agents.<br>No lost tasks, usage visibility with admission controls, no policy bypass, full traceability.</p>
         <div class="hero-actions">
             <a href="/docs/quickstart.html" class="btn btn-primary">Get Started in 5 Minutes →</a>
-            <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+            <a href="#evidence" class="btn btn-secondary">Reliability Evidence →</a>
+                <a href="https://github.com/agentium-lab/Janus" target="_blank" class="btn btn-secondary">GitHub ↗</a>
         </div>
         <div class="hero-meta">
             <span>PostgreSQL-durable, NATS optional</span>
@@ -116,6 +117,13 @@
             <h2>One broker, three planes</h2>
             <p class="section-sub">Agents talk to Janus; Janus owns durability; PostgreSQL is the single source of truth.</p>
         </div>
+        <div class="arch-path" style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:2.2rem 0 .4rem;font-size:.9rem;">
+            <span style="border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 16px;">🤖 Producer agent<br><small style="opacity:.65">submits the task</small></span>
+            <span style="color:var(--primary-2,#a78bfa);">→</span>
+            <span style="border:1px solid rgba(139,92,246,.5);border-radius:999px;padding:7px 16px;background:rgba(139,92,246,.10);">🛡️ Janus<br><small style="opacity:.75">persist · authorize · budget · recover</small></span>
+            <span style="color:var(--primary-2,#a78bfa);">→</span>
+            <span style="border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 16px;">⚙️ Consumer agent<br><small style="opacity:.65">pulls, runs, ACKs</small></span>
+        </div>
         <div class="arch-grid">
             <div class="arch-col">
                 <div class="arch-box">
@@ -166,7 +174,7 @@
         <div class="section-head">
             <span class="eyebrow">Capabilities</span>
             <h2>Core Capabilities</h2>
-            <p class="section-sub">Six pillars that turn fragile agent-to-agent calls into a governed, observable, durable mesh.</p>
+            <p class="section-sub">Core capabilities that turn fragile agent-to-agent calls into a governed, observable, durable mesh.</p>
         </div>
         <div class="feature-grid">
             <div class="feature">
@@ -191,7 +199,8 @@
                 <h3><span class="fi">⚖️</span> Governance</h3>
                 <ul>
                     <li>Policy engine: who can call whom, with what data</li>
-                    <li>Budget: RPM / TPM / concurrency admission limits per tenant/agent (broker-counted; a Redis outage fails open); token &amp; cost figures are agent-reported visibility, TPM is an admission estimate</li>
+                    <li>Admission: RPM / TPM / concurrency limits per tenant and agent (broker-counted; TPM is an admission estimate; a Redis outage fails open)</li>
+                    <li>Usage &amp; cost: agents report token usage on ACK; Janus estimates cost at a fixed rate, keeps per-tenant and per-agent ledgers, and enforces a daily estimated-cost threshold — estimates are not your model vendor’s actual bill</li>
                     <li>Human approval for high-risk tasks</li>
                     <li>Full audit trail for every step</li>
                 </ul>
@@ -347,7 +356,7 @@
             <div class="ev-card">
                 <div class="ev-num">0 half-writes</div>
                 <h4>Redis fail-closed runtime</h4>
-                <p>Budget-gated pull allowed → Redis killed → pull rejected with zero half-writes (task stays queued, no attempts) → recovery re-allows. Four-cell driver matrix re-runs nightly.</p>
+                <p>With the fail-closed policy enabled: budget-gated pull allowed → Redis killed → pull rejected with zero half-writes (task stays queued, no attempts) → recovery re-allows. The default policy is fail-open (availability over strictness); four-cell driver matrix re-runs nightly.</p>
                 <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">drill source →</a>
             </div>
             <div class="ev-card">
@@ -363,7 +372,7 @@
                 <a class="ev-link" href="https://github.com/agentium-lab/Janus/actions/workflows/ci.yml" target="_blank" rel="noopener">CI history →</a>
             </div>
         </div>
-        <p class="ev-foot">Delivery semantics: at-least-once — broker state never double-settles; external side effects must be idempotent.</p>
+        <p class="ev-foot">Delivery vs settlement: a task may be redelivered (at-least-once); duplicate ACKs never double-settle; external side effects must be idempotent in the worker.</p>
     </div>
 </section>
 
@@ -437,7 +446,7 @@ await client.publishTask({
         <div class="section-head">
             <span class="eyebrow">Compatibility</span>
             <h2>Framework Compatibility</h2>
-            <p class="ecosystem-subtitle">Bring your existing stack — Janus bridges them all through one durable backbone.</p>
+            <p class="ecosystem-subtitle">Bring your existing stack — every framework below integrates <em>via the SDKs</em> (no framework-specific adapter needed); human approval steps are a routing target, not a framework.</p>
         </div>
         <div class="eco-pills">
             <span class="eco-pill">LangGraph</span>
