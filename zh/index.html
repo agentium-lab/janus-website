@@ -390,14 +390,14 @@
             <div class="sdk-card">
                 <h3>Go <span class="sdk-lang">39 个方法</span></h3>
                 <div class="sdk-install">go get github.com/agentium-lab/Janus/sdk/go</div>
-<pre><code>client := janus.NewClient(janus.Config{
-    BaseURL: "http://localhost:8080",
-    TenantID: "acme", APIKey: "janus_dev_...",
-})
-client.PublishTask(ctx, janus.PublishTaskRequest{
-    ID: "task-001", SourceAgent: "product",
-    TargetType: "capability", TargetValue: "code_review",
-})</code></pre>
+<pre><code><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-d">:</span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-f">NewClient</span><span class="tok-d">(</span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-t">Config</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">BaseURL</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"http://localhost:8080"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TenantID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">APIKey</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"janus_dev_..."</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">PublishTask</span><span class="tok-d">(</span><span class="tok-d">ctx</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d">.</span><span class="tok-t">PublishTaskRequest</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">ID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"task-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">SourceAgent</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-t">TargetType</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-t">TargetValue</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
                 <ul>
                     <li>Worker 助手:心跳、租约续期、至少一次循环</li>
                     <li>与 gRPC 面的 proto 级对齐</li>
@@ -407,13 +407,13 @@ client.PublishTask(ctx, janus.PublishTaskRequest{
             <div class="sdk-card">
                 <h3>Python <span class="sdk-lang">34 个方法</span></h3>
                 <div class="sdk-install">pip install janus-broker</div>
-<pre><code>client = JanusClient("http://localhost:8080",
-    tenant_id="acme", api_key="janus_dev_...")
+<pre><code><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-f">JanusClient</span><span class="tok-d">(</span><span class="tok-s">"http://localhost:8080"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tenant_id</span><span class="tok-d">=</span><span class="tok-s">"acme"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">api_key</span><span class="tok-d">=</span><span class="tok-s">"janus_dev_..."</span><span class="tok-d">)</span>
 
-client.publish_task(PublishTaskRequest(
-    id="task-001", source_agent="product",
-    target_type="capability", target_value="code_review",
-))</code></pre>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-f">PublishTaskRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-d">=</span><span class="tok-s">"task-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">source_agent</span><span class="tok-d">=</span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">target_type</span><span class="tok-d">=</span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">target_value</span><span class="tok-d">=</span><span class="tok-s">"code_review"</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
                 <ul>
                     <li>请求模型或普通 dict——两者校验与序列化完全一致</li>
                     <li>JanusWorker 带进度回调与优雅停止</li>
@@ -423,15 +423,14 @@ client.publish_task(PublishTaskRequest(
             <div class="sdk-card">
                 <h3>TypeScript <span class="sdk-lang">30 个方法</span></h3>
                 <div class="sdk-install">npm i @agentium-lab/janus-sdk</div>
-<pre><code>const client = new Client({
-    baseURL: "http://localhost:8080",
-    tenantID: "acme", apiKey: "janus_dev_...",
-});
-
-await client.publishTask({
-    id: "task-001", sourceAgent: "product",
-    targetType: "capability", targetValue: "code_review",
-});</code></pre>
+<pre><code><span class="tok-k">const</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-k">new</span><span class="tok-d"> </span><span class="tok-f">Client</span><span class="tok-d">(</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">baseURL</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"http://localhost:8080"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tenantID</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">apiKey</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"janus_dev_..."</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>
+<span class="tok-k">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publishTask</span><span class="tok-d">(</span><span class="tok-d">{</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">id</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"task-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">sourceAgent</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"product"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">targetType</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">targetValue</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"code_review"</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span></code></pre>
                 <ul>
                     <li>由扁平字段自动构造 envelope</li>
                     <li>Worker 带 abort 信号的租约处理</li>
