@@ -334,7 +334,7 @@
         <div class="section-head">
             <span class="eyebrow">可靠性证据</span>
             <h2>每个声明背后都有一次真实运行</h2>
-            <p class="section-sub">演练在真实 PostgreSQL / NATS / Redis 上执行——CI 每次 push、nightly 每晚、锚定 SHA。</p>
+            <p class="section-sub">演练在真实 PostgreSQL / NATS / Redis 上执行——每次 push 跑单测/race 门禁，完整演练集在 nightly 计划执行；每个数字都锚定实测时的 SHA。</p>
         </div>
         <div class="evidence-grid">
             <div class="ev-card">
@@ -347,25 +347,25 @@
                 <div class="ev-num">27/27</div>
                 <h4>SDK 混沌矩阵</h4>
                 <p>六故障场景——eof · 网络切断 · 租约丢失 · ACK 失败 · 90 秒长任务 · 优雅停止——× Go / Python / TypeScript,含晚 ACK 拒绝核验与恰好一次结算。</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/sdk_chaos_matrix.sh" target="_blank" rel="noopener">演练源码 →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/9a8d966/scripts/sdk_chaos_matrix.sh" target="_blank" rel="noopener">演练源码 @ 9a8d966（2026-11-05，运行：SDK_CHAOS_PASS=1，27/27）→</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">5.7s</div>
                 <h4>PITR 业务 RTO</h4>
                 <p>从灾难(主库被杀)到 WAL 期任务与<em>新任务</em>都在恢复集群上领取结算,一只时钟计时;WAL-only 任务未结算即判失败。</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/dr_ga10_pitr.sh" target="_blank" rel="noopener">演练源码 →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/9a8d966/scripts/dr_ga10_pitr.sh" target="_blank" rel="noopener">演练源码 @ 9a8d966（2026-11-05，运行：GA10_PITR PASS，统一 RTO 5.7s）→</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">0 半写</div>
                 <h4>Redis 失败关闭运行期</h4>
                 <p>启用 fail-closed 配置时:预算门控拉取放行 → 杀 Redis → 拉取被拒且零半写(任务保持 queued、零 attempt)→ 恢复后重新放行。默认策略为 fail-open(可用性优先);四格驱动矩阵每晚重跑。</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">演练源码 →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/5d58d76/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">演练源码 @ 5d58d76（2026-11-05，运行：fc 格 9/9；四格矩阵全绿）→</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">100 t/s · 495 ev/s</div>
                 <h4>持续负载(实测)</h4>
                 <p>PG 队列、120 秒窗口、8 发布者 / 2,000 邮箱 / 32 消费者：发布 p95 55ms、热交接 32ms——Ryzen 7 7840H 8核16线程、16 GB 内存，Broker 与 PostgreSQL、NATS、Redis 同机。负载期拉取 p95 218ms。</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">演练源码 →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/4846e27/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">演练源码 @ 4846e27（2026-11-05，运行：SUSTAINED_PASS=1，11 门禁中 10 绿）→</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">CI · Nightly</div>

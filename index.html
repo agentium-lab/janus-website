@@ -332,38 +332,38 @@
         <div class="section-head">
             <span class="eyebrow">Reliability Evidence</span>
             <h2>Every claim has a run behind it</h2>
-            <p class="section-sub">Drills execute against real PostgreSQL / NATS / Redis — in CI, on every nightly, at a pinned SHA.</p>
+            <p class="section-sub">Drills execute against real PostgreSQL / NATS / Redis — unit/race gates on every push, the full drill set on the nightly schedule, each number pinned to the SHA it was measured at.</p>
         </div>
         <div class="evidence-grid">
             <div class="ev-card">
                 <div class="ev-num">v1.11.0</div>
                 <h4>GA release</h4>
-                <p>Tagged <code>018bc0e</code>; gates on the tagged tree: make verify green, coverage 92.6% ≥ 90% three consecutive runs, helm lint clean.</p>
+                <p>Tagged <code>018bc0e</code> (2026-11-06); gates on the tagged tree: make verify green, coverage 92.6% ≥ 90% three consecutive runs, helm lint clean.</p>
                 <a class="ev-link" href="https://github.com/agentium-lab/Janus/releases/tag/v1.11.0" target="_blank" rel="noopener">release artifacts →</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">27/27</div>
                 <h4>SDK chaos matrix</h4>
                 <p>Six fault cases — eof · network-cut · lease-lost · ack-failure · 90s · stop — × Go / Python / TypeScript, with verified late-ACK rejection and exactly-once settlement.</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/sdk_chaos_matrix.sh" target="_blank" rel="noopener">drill source →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/9a8d966/scripts/sdk_chaos_matrix.sh" target="_blank" rel="noopener">drill source @ 9a8d966 (2026-11-05, run: SDK_CHAOS_PASS=1, 27/27) →</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">5.7s</div>
                 <h4>PITR business RTO</h4>
                 <p>One clock from disaster (primary killed) to WAL-era <em>and</em> new tasks pulled &amp; settled on the restored cluster; the WAL-only task must settle or the drill fails.</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/dr_ga10_pitr.sh" target="_blank" rel="noopener">drill source →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/9a8d966/scripts/dr_ga10_pitr.sh" target="_blank" rel="noopener">drill source @ 9a8d966 (2026-11-05, run: GA10_PITR PASS, unified RTO 5.7s) →</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">0 half-writes</div>
                 <h4>Redis fail-closed runtime</h4>
                 <p>With the fail-closed policy enabled: budget-gated pull allowed → Redis killed → pull rejected with zero half-writes (task stays queued, no attempts) → recovery re-allows. The default policy is fail-open (availability over strictness); four-cell driver matrix re-runs nightly.</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">drill source →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/5d58d76/scripts/ga07_four_cell.sh" target="_blank" rel="noopener">drill source @ 5d58d76 (2026-11-05, run: fc cell 9/9; matrix 4 cells green) →</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">100 t/s · 495 ev/s</div>
                 <h4>Sustained load (measured)</h4>
                 <p>PG queue driver, 120s window, 8 publishers / 2,000 mailboxes / 32 consumers: publish p95 55ms, warm handoff 32ms. Host: a shared dev machine (WSL2) — Ryzen 7 7840H 8c/16t, 16 GB RAM — with the broker, PostgreSQL, NATS and Redis co-located. In-window pull p95 218ms — recorded as the <em>accepted performance boundary</em> on that hardware, not as meeting the 100ms target.</p>
-                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/main/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">drill source →</a>
+                <a class="ev-link" href="https://github.com/agentium-lab/Janus/blob/4846e27/scripts/load_ga11_sustained.sh" target="_blank" rel="noopener">drill source @ 4846e27 (2026-11-05, run: SUSTAINED_PASS=1, 10/11 gates) →</a>
             </div>
             <div class="ev-card">
                 <div class="ev-num">CI · Nightly</div>

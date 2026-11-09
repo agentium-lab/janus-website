@@ -1275,7 +1275,22 @@ pre code {
     grid-template-columns: 1fr;
     gap: 0;
   }
-  .doc-toc { display: none; }
+  .doc-toc {
+    display: block;
+    position: static;
+    max-height: none;
+    margin: 0 0 18px;
+    padding: 0;
+  }
+  .doc-toc-title { cursor: default; }
+  /* Collapsed by default on phones; app.js toggles via the title button */
+  .doc-toc.collapsed ul { display: none; }
+  .doc-toc:not(.collapsed) .doc-toc-title::after {
+    content: ' ▲';
+  }
+  .doc-toc.collapsed .doc-toc-title::after {
+    content: ' ▼';
+  }
   .doc-layout .doc-content {
     max-width: 760px;
     margin: 0 auto;

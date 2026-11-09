@@ -93,31 +93,45 @@
     <h3>Tasks</h3>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
-        <div class="desc">Publish a task. Body: <code>{ "id", "source_agent", "target_type", "target_value", "envelope" }</code>. Response: <code>{ "id", "status", "task": {...} }</code> — full task object included since v1.1.0.</div>
+        <div class="desc">Publish a task. Body (required: <code>id</code>, <code>source_agent</code>, <code>target_type</code>, <code>target_value</code>; <code>envelope</code> optional but recommended):
+<code>{ "id": "task-001", "source_agent": "product", "target_type": "capability", "target_value": "code_review", "priority": "normal", "envelope": { "task_id": "task-001", "tenant_id": "acme", "source_agent": "product", "target": { "type": "capability", "value": "code_review" }, "payload": { "type": "code_review", "content": "{\"pr\": 42}" } } }</code>.
+Response <code>201</code>: the full task object (<code>id</code>, <code>status</code>: <code>queued</code> on success, <code>approval_pending</code> when policy requires approval). Publishing the same <code>id</code> twice is idempotent (returns the existing task).</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/mailboxes/{name}/pull</span></div>
-        <div class="desc">Pull next pending task from a mailbox. Body: <code>{ "agent_id": "reviewer" }</code></div>
+        <div class="desc">Pull the next pending task from a mailbox (long-poll up to ~2s). Body: <code>{ "agent_id": "reviewer" }</code>. Response <code>200</code>: <code>{ "task": { "id": "...", "status": "claimed", ... }, "lease": { "lease_id": "...", "attempt": 1, "expires_at": "..." } }</code>. Empty mailbox: <code>204 No Content</code> — a normal result, retry. Delivery is at-least-once: if the lease expires without ACK, the same task is redelivered (attempt increments).</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/start</span></div>
-        <div class="desc">Start task processing. Body: <code>{ "lease_id": "..." }</code></div>
+        <div class="desc">Start processing after pulling. Body: <code>{ "lease_id": "...", "agent_id": "reviewer" }</code>. Moves the task to <code>running</code>. An expired or mismatched lease returns <code>400</code> — pull again instead.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/heartbeat</span></div>
+        <div class="desc">Renew the task lease mid-processing (long tasks). Body: <code>{ "lease_id": "...", "agent_id": "reviewer" }</code>. Response <code>200</code>: <code>{ "status": "ok" }</code>. Without renewal the lease expires (mailbox <code>ack_wait_seconds</code>, default 300s) and the task is redelivered to another worker.</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/progress</span></div>
+        <div class="desc">Report live progress mid-task. Body: <code>{ "message": "Analyzing code...", "percent": 20 }</code> (<code>message</code> required; <code>percent</code> optional 0-100; <code>data</code> optional JSON). Emits a <code>task.progress</code> event readable via the events endpoint / SSE stream.</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/ack</span></div>
-        <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "agent_id": "...", "result_ref": "...", "token_usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 } }</code>. <code>token_usage</code> is optional: agents report token counts on ACK; Janus estimates cost at a fixed rate ($0.00003/token), keeps per-tenant and per-agent ledgers, and enforces the configured daily estimated-cost threshold — estimates are not your model vendor's actual bill.</div>
+        <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "agent_id": "...", "result_ref": "...", "token_usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 } }</code> (<code>lease_id</code> required; <code>agent_id</code> required for bound keys; <code>result_ref</code> recommended — downstream agents read it; <code>token_usage</code> optional). Response <code>200</code>: <code>{ "status": "completed" }</code>. Duplicate ACKs are idempotent — budgets never double-settle. ACK against an expired lease returns <code>400</code>; the task will have been redelivered. Token usage: Janus estimates cost at a fixed rate ($0.00003/token), keeps per-tenant and per-agent ledgers, and enforces the configured daily estimated-cost threshold — estimates are not your model vendor's actual bill.</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/nack</span></div>
-        <div class="desc">Negative ACK — return to queue or DLQ. Body: <code>{ "lease_id": "...", "reason": "..." }</code></div>
+        <div class="desc">Negative ACK — requeue or dead-letter. Body: <code>{ "lease_id": "...", "agent_id": "...", "retriable": true, "error": { "code": "TRANSIENT", "message": "upstream timeout" } }</code>. <code>retriable: true</code> schedules a backoff retry (<code>retry_scheduled</code>); <code>false</code> dead-letters the task (mailbox DLQ, replayable via <code>/replay</code>).</div>
     </div>
     <div class="endpoint">
         <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks/{id}</span></div>
-        <div class="desc">Get task details and current state.</div>
+        <div class="desc">Get task details: <code>{ "id", "status", "result_ref", "error", "attempt_count", "replay_count", "created_at", "completed_at", "envelope", ... }</code>. Statuses: <code>queued · claimed · running · retry_scheduled · approval_pending · completed · failed · dead_lettered · cancelled · expired</code>. Terminal states never transition back except via replay.</div>
     </div>
     <div class="endpoint">
         <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks</span></div>
         <div class="desc">List tasks with optional filters (status, mailbox, source).</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/events</span></div>
+        <div class="desc">The task's event trail (lifecycle + progress): <code>task.created · task.queued · task.claimed · task.started · task.progress · task.completed · task.failed · task.retry_scheduled · task.dead_lettered · task.cancelled</code>. Progress payloads carry <code>percent</code>/<code>message</code> from the progress endpoint — this is how a fan-in consumer reads branch results.</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/replay</span></div>
@@ -135,14 +149,7 @@
     </div>
 
     <h3>Artifacts</h3>
-    <div class="endpoint">
-        <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/artifacts</span></div>
-        <div class="desc">Upload an artifact. Multipart form with tenant isolation.</div>
-    </div>
-    <div class="endpoint">
-        <div><span class="method get">GET</span><span class="path">/v1/tenants/{tenant}/artifacts/{id}</span></div>
-        <div class="desc">Download an artifact (tenant-scoped access check).</div>
-    </div>
+    <p>The artifact store ships as an in-process library (content-addressed, sha256, tenant-scoped) and is not yet exposed as a public HTTP API — there are no <code>/artifacts</code> endpoints in this release. Reference large payloads via <code>result_ref</code> (e.g. <code>s3://...</code>) in ACKs. A public upload/download API is on the roadmap.</p>
 
     <h2>Error Format</h2>
     <p>All errors return a standard envelope:</p>
