@@ -205,7 +205,7 @@ jobs:
         <li><strong>Governance</strong> — unified policy and budget enforcement regardless of framework</li>
         <li><strong>Audit</strong> — cross-framework traceability with a single trace ID</li>
         <li><strong>Protocol bridging</strong> — LangGraph agents can hand off to AutoGen agents seamlessly</li>
-        <li><strong>Observability</strong> — Prometheus metrics and OTel tracing across the entire agent mesh</li>
+        <li><strong>Observability</strong> — Prometheus metrics; service-level spans with optional OTLP export from Janus (HTTP traceparent propagation across arbitrary agents: roadmap)</li>
     </ul>
 
     <div class="note">You don't need to choose one framework. Janus lets you mix and match — use LangGraph for complex DAG orchestration, AutoGen for conversational teams, and GitHub Actions for CI triggers. They all interoperate through Janus mailboxes.</div>

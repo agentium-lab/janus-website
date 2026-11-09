@@ -31,7 +31,7 @@
             <a href="/docs/sdk.html">SDK</a>
             <a href="/scenarios/code-review.html">Scenarios</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/zh/" class="lang-switch">中文</a>
+            <a href="/zh/docs/api.html" class="lang-switch">中文</a>
         </div>
     </div>
 </nav>
@@ -105,7 +105,7 @@
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/ack</span></div>
-        <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "result_ref": "..." }</code></div>
+        <div class="desc">Acknowledge successful completion. Body: <code>{ "lease_id": "...", "agent_id": "...", "result_ref": "...", "token_usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 } }</code>. <code>token_usage</code> is optional: agents report token counts on ACK; Janus estimates cost at a fixed rate ($0.00003/token), keeps per-tenant and per-agent ledgers, and enforces the configured daily estimated-cost threshold — estimates are not your model vendor's actual bill.</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/nack</span></div>

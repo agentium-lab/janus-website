@@ -32,7 +32,7 @@
             <a href="/zh/docs/sdk.html">SDK</a>
             <a href="/zh/scenarios/code-review.html">场景</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/" class="lang-switch">English</a>
+            <a href="/docs/concepts.html" class="lang-switch">English</a>
         </div>
     </div>
 </nav>
@@ -289,7 +289,7 @@
     </ul>
 
     <h2>持久化模型（Durability Model）</h2>
-    <p>任务被双写至 PostgreSQL（真相源）与 NATS JetStream（快速投递）。如果 Broker 进程中途崩溃：</p>
+    <p>任务被事务性 Outbox至 PostgreSQL（真相源）与 NATS JetStream（快速投递）。如果 Broker 进程中途崩溃：</p>
     <ul>
         <li>已认领但未 ACK 的在途任务，其租约会过期</li>
         <li>outbox 机制确保 Broker 崩溃期间不会丢失任何任务</li>
@@ -299,7 +299,7 @@
     <h2>租户隔离（Tenant Isolation）</h2>
     <p>每个任务、邮箱和工件都限定在租户内。跨租户访问会被自动拒绝。所有审计事件都带有租户 ID 标签。</p>
 
-    <div class="note">Janus 使用<strong>双写持久化</strong>（PG + NATS）保障可靠性。Broker 能在 Agent 崩溃、网络分区乃至自身重启的情况下不丢失任何任务。</div>
+    <div class="note">Janus 使用<strong>事务性 Outbox持久化</strong>（PG + NATS）保障可靠性。Broker 能在 Agent 崩溃、网络分区乃至自身重启的情况下不丢失任何任务。</div>
 </div>
 
 <footer class="footer">

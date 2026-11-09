@@ -32,7 +32,7 @@
             <a href="/zh/docs/sdk.html">SDK</a>
             <a href="/zh/scenarios/code-review.html">场景</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/" class="lang-switch">English</a>
+            <a href="/docs/quickstart.html" class="lang-switch">English</a>
         </div>
     </div>
 </nav>
@@ -121,6 +121,10 @@
 
 <span class="tok-f">curl</span><span class="tok-d"> </span><span class="tok-n">-s</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">8080</span><span class="tok-o">/</span><span class="tok-d">readyz</span>
 <span class="tok-c"># → {&quot;status&quot;:&quot;ready&quot;}  (检查 PG + NATS + Redis 连通性)</span></code></pre>
+    <p><strong>获取 API 密钥。</strong>鉴权默认开启，栈会为租户 <code>acme</code> 种入公共开发密钥。现在导出它——后续每一步都会用到：</p>
+    <pre><code><span class="tok-c"># 种入的开发密钥（设计上公开——仅限开发）： </span>
+<span class="tok-d">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-d">janus_e12ebdab09a71c856666756ab26fd12db630041a96559b74066f66820c1d6d48</span></code></pre>
+    <p></p>
     <p>Janus 暴露两个端口：</p>
     <ul>
         <li><code>8080</code> — HTTP REST API 与协议网关</li>
@@ -147,7 +151,7 @@
     <p>最常调整的变量（均以 <code>JANUS_</code> 为前缀）：</p>
     <table>
         <tr><th>变量</th><th>默认值</th><th>说明</th></tr>
-        <tr><td><code>JANUS_CONFIG_FILE</code></td><td>—</td><td>YAML 配置文件路径（覆盖以下所有项）</td></tr>
+        <tr><td><code>JANUS_CONFIG_FILE</code></td><td>—</td><td>YAML 配置文件路径；环境变量仍优先于文件值</td></tr>
         <tr><td><code>JANUS_HTTP_PORT</code></td><td>8080</td><td>HTTP REST API 端口</td></tr>
         <tr><td><code>JANUS_GRPC_PORT</code></td><td>9090</td><td>gRPC API 端口</td></tr>
         <tr><td><code>JANUS_PG_HOST</code></td><td>localhost</td><td>PostgreSQL 主机</td></tr>
@@ -896,7 +900,7 @@ dedupe_key       text         -- (tenant_id, dedupe_key) 唯一，防重复投�
 <span class="tok-d">    </span><span class="tok-s">"shipping"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"tracking"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"SF789"</span><span class="tok-o">}</span><span class="tok-o">,</span>
 <span class="tok-d">    </span><span class="tok-s">"return"</span><span class="tok-o">:</span><span class="tok-d">   </span><span class="tok-o">{</span><span class="tok-s">"pickup"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"PU123"</span><span class="tok-o">}</span><span class="tok-o">,</span>
 <span class="tok-d">    </span><span class="tok-s">"message"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"红色手机已发出（SF789），蓝色手机已安排取件（PU123）"</span>
-<span class="tok-o">}</span><span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
+<span class="tok-o">}</span><span class="tok-o">}</span><span class="tok-o">}</span><span class="tok-o">)</span></code></pre>
 
     <div class="note"><strong>这个示例展示的核心能力：</strong>这是一个完整的类生产工作流，覆盖了意图路由（LLM 驱动的自然语言→能力映射）、基于能力的路由（根据 Agent 能做什么来匹配）、同一管线中的多种路由类型、租约过期恢复（崩溃模拟）、并行分支执行，以及 Agent 之间的数据传递。同样的模式适用于客服工单处理、订单履约、理赔审核等任何需要多 Agent 协作并交换数据的工作流。</div>
 
@@ -908,7 +912,7 @@ dedupe_key       text         -- (tenant_id, dedupe_key) 唯一，防重复投�
         <li><a href="/zh/scenarios/code-review.html">代码审核场景</a> — 多 Agent 代码审核流水线</li>
     </ul>
 
-    <div class="note">Janus 默认<strong>开启鉴权</strong>。Compose 文件为本地便利设置了 <code>JANUS_AUTH_ENABLED=false</code>——在将 Janus 暴露到网络前，请重新开启（并通过 <code>janus api-key create</code> 创建 API 密钥）。</div>
+    <div class="note">Compose 以<strong>开启鉴权</strong>运行（<code>JANUS_AUTH_ENABLED=true</code>），并为租户 <code>acme</code> 种入公共开发密钥——导出为 <code>JANUS_API_KEY</code>（见第 2 步）。真实部署请用 <code>janus api-key create</code> 创建自己的密钥，切勿暴露开发密钥。</div>
         </div>
     </div>
 </div>

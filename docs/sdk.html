@@ -31,7 +31,7 @@
             <a href="/docs/sdk.html">SDK</a>
             <a href="/scenarios/code-review.html">Scenarios</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/zh/" class="lang-switch">中文</a>
+            <a href="/zh/docs/sdk.html" class="lang-switch">中文</a>
         </div>
     </div>
 </nav>
@@ -44,6 +44,7 @@
 <div class="doc-content">
     <span class="eyebrow">Documentation</span>
     <h1>SDK Guide</h1>
+    <p class="section-sub">Examples apply to SDK release <strong>1.11.0</strong> (Go module / PyPI / npm). All snippets assume <code>JANUS_API_KEY</code> is exported and Janus runs at <code>http://localhost:8080</code> with tenant <code>acme</code>.</p>
     <p>Janus provides first-party SDKs for Go, Python, and TypeScript. All three implement the same core operations: create mailboxes, publish tasks, pull tasks, and acknowledge completion.</p>
 
     <h2>Go SDK</h2>
@@ -52,9 +53,18 @@
         <pre><code>go get github.com/agentium-lab/Janus/sdk/go</code></pre>
 
         <p><strong>Client creation</strong></p>
-        <pre><code>import janus "github.com/agentium-lab/Janus/sdk/go"
+        <pre><code>import (
+    "os"
 
-client := janus.NewClient("http://localhost:8080", janus.WithTenant("acme"))</code></pre>
+    janus "github.com/agentium-lab/Janus/sdk/go"
+    "github.com/agentium-lab/Janus/core"
+)
+
+client := janus.NewClient(janus.Config{
+    BaseURL:  "http://localhost:8080",
+    TenantID: "acme",
+    APIKey:   os.Getenv("JANUS_API_KEY"),
+})</code></pre>
 
         <p><strong>Key methods (39 total)</strong></p>
         <div class="method-grid">
@@ -68,13 +78,15 @@ client := janus.NewClient("http://localhost:8080", janus.WithTenant("acme"))</co
             <div class="method-item"><div class="method-name">ResolveIntent</div><div class="method-desc">NL → capability</div></div>
         </div>
         <pre><code>// Publish a task
-resp, err := client.PublishTask(ctx, &amp;janus.PublishRequest{
+resp, err := client.PublishTask(ctx, janus.PublishTaskRequest{
+    ID:          "task-001",
     SourceAgent: "product",
-    TargetType:  "mailbox",
-    TargetValue: "review-mb",
-    Envelope: janus.Envelope{
-        Type: "code_review",
-        Payload: json.RawMessage(`{"pr_url": "..."}`),
+    TargetType:  "capability",
+    TargetValue: "code_review",
+    Envelope: core.TaskEnvelope{
+        TaskID: "task-001", TenantID: "acme", SourceAgent: "product",
+        Target:  core.Target{Type: "capability", Value: "code_review"},
+        Payload: core.Payload{Type: "code_review", Content: `{"pr_url": "..."}`},
     },
 })</code></pre>
     </div>
@@ -85,8 +97,15 @@ resp, err := client.PublishTask(ctx, &amp;janus.PublishRequest{
         <pre><code>pip install janus-broker</code></pre>
 
         <p><strong>Client creation</strong></p>
-        <pre><code>from janus_broker import Client
-client = Client("http://localhost:8080", tenant_id="acme")</code></pre>
+        <pre><code>import os
+
+from janus_broker import CreateMailboxRequest, JanusClient, PublishTaskRequest
+
+client = JanusClient(
+    "http://localhost:8080",
+    tenant_id="acme",
+    api_key=os.environ["JANUS_API_KEY"],
+)</code></pre>
 
         <p><strong>Key methods (34 total)</strong></p>
         <div class="method-grid">
@@ -98,17 +117,16 @@ client = Client("http://localhost:8080", tenant_id="acme")</code></pre>
             <div class="method-item"><div class="method-name">nack_task</div><div class="method-desc">Negative ACK</div></div>
             <div class="method-item"><div class="method-name">list_tasks</div><div class="method-desc">List/filter tasks</div></div>
         </div>
-        <pre><code># Create mailbox
-client.create_mailbox("review-mb", agent_id="reviewer")
+        <pre><code># Create mailbox (request model; plain dicts are also accepted)
+client.create_mailbox(CreateMailboxRequest(id="review-mb", agent_id="reviewer"))
 
 # Publish task
-resp = client.publish_task({
-    "id": "task-001",
-    "source_agent": "product",
-    "target_type": "mailbox",
-    "target_value": "review-mb",
-    "envelope": {"type": "code_review", "payload": {...}}
-})</code></pre>
+resp = client.publish_task(PublishTaskRequest(
+    id="task-001",
+    source_agent="product",
+    target_type="capability",
+    target_value="code_review",
+))</code></pre>
     </div>
 
     <h2>TypeScript SDK</h2>
@@ -118,7 +136,12 @@ resp = client.publish_task({
 
         <p><strong>Client creation</strong></p>
         <pre><code>import { Client } from "@agentium-lab/janus-sdk";
-const client = new Client("http://localhost:8080", { tenantId: "acme" });</code></pre>
+
+const client = new Client({
+    baseURL: "http://localhost:8080",
+    tenantID: "acme",
+    apiKey: process.env.JANUS_API_KEY!,
+});</code></pre>
 
         <p><strong>Key methods (30 total)</strong></p>
         <div class="method-grid">
@@ -139,7 +162,6 @@ const resp = await client.publishTask({
     sourceAgent: "product",
     targetType: "mailbox",
     targetValue: "review-mb",
-    envelope: { type: "code_review", payload: {...} }
 });</code></pre>
     </div>
 

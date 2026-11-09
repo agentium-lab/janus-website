@@ -32,7 +32,7 @@
             <a href="/zh/docs/sdk.html">SDK</a>
             <a href="/zh/scenarios/code-review.html">场景</a>
             <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
-            <a href="/" class="lang-switch">English</a>
+            <a href="/docs/api.html" class="lang-switch">English</a>
         </div>
     </div>
 </nav>
@@ -106,7 +106,7 @@
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/ack</span></div>
-        <div class="desc">确认成功完成。请求体：<code>{ "lease_id": "...", "result_ref": "..." }</code></div>
+        <div class="desc">确认成功完成。请求体：<code>{ "lease_id": "...", "agent_id": "...", "result_ref": "...", "token_usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 } }</code>。<code>token_usage</code> 可选：Agent 在 ACK 时上报 Token 数；Janus 按固定单价（$0.00003/token）估算费用、按租户与 Agent 记账，并执行已配置的估算日费用阈值——估算不等同于模型服务商的实际账单。</div>
     </div>
     <div class="endpoint">
         <div><span class="method post">POST</span><span class="path">/v1/tenants/{tenant}/tasks/{id}/nack</span></div>
