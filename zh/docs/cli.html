@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI 参考 — Janus</title>
+    <meta name="description" content="janus CLI：全局参数、命令分组、项目工作流、API 密钥、任务、邮箱、仪表盘。" >
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css?v=20260731">
+    <script src="/assets/app.js?v=20260731" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links" id="site-nav">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/configuration.html">配置</a>
+                    <a href="/zh/docs/deployment.html">部署</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/docs/cli.html" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="doc-intro">
+    <div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
+    <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
+    <span class="eyebrow">文档</span>
+    <h1>快速开始</h1>
+    <p>安装、配置并运行 Janus，然后完成你的第一个 Agent 到 Agent 任务交接。</p>
+</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">本页目录</div>
+        <ul>
+        <li><a href="#cli-reference">CLI 参考</a>
+            <ul>
+            <li><a href="#cli-global-flags">全局参数</a></li>
+            <li><a href="#cli-command-tree">命令分组</a></li>
+            <li><a href="#cli-project">项目工作流</a></li>
+            <li><a href="#cli-api-keys">API 密钥</a></li>
+            <li><a href="#cli-tasks-mailboxes">任务与邮箱</a></li>
+            <li><a href="#cli-dashboard">Dashboard</a></li>
+            </ul></li>
+        </ul>
+    </aside>
+<div class="doc-content-col">
+        <div class="doc-content">
+<h2 id="cli-reference">CLI 参考</h2>
+    <p><code>janus</code> CLI 是管理 Agent、任务、邮箱、API 密钥、策略与项目配置的主要工具。它通过 HTTP 与 Janus API 服务端通信 —— 用 <code>--server</code> 指定服务端地址。</p>
+
+    <h3 id="cli-global-flags">全局参数</h3>
+    <p>所有命令都接受以下持久参数。可通过环境变量一次性设置，避免重复输入：</p>
+    <table>
+        <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>--server</code></td><td><code>http://localhost:8080</code></td><td>Janus API 服务端地址。</td></tr>
+        <tr><td><code>--tenant</code></td><td><code>default</code></td><td>要操作的租户 ID。</td></tr>
+        <tr><td><code>--api-key</code></td><td><code>$JANUS_API_KEY</code></td><td>认证用 API 密钥。回退到环境变量。</td></tr>
+        <tr><td><code>--file</code></td><td>—</td><td>项目配置文件路径。覆盖 <code>$JANUS_PROJECT_FILE</code> 与默认的 <code>janus.project.yaml</code>。</td></tr>
+    </table>
+    <pre><code><span class="tok-c"># 为你的 shell 会话做一次性设置</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-s">"jak_..."</span>
+<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_PROJECT_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
+
+<span class="tok-c"># 之后所有 janus 命令都会自动读取这些值</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-command-tree">命令分组</h3>
+    <table>
+        <tr><th>命令</th><th>子命令</th><th>用途</th></tr>
+        <tr><td><code>project</code></td><td><code>init</code>、<code>validate</code>、<code>diff</code>、<code>apply</code>、<code>sync</code></td><td>声明式租户拓扑管理。</td></tr>
+        <tr><td><code>tenant</code></td><td><code>add</code></td><td>创建租户并持久化到项目文件。</td></tr>
+        <tr><td><code>agent</code></td><td><code>register</code>、<code>add</code>、<code>status</code>、<code>heartbeat</code></td><td>注册 Agent 并检查存活。</td></tr>
+        <tr><td><code>task</code></td><td><code>publish</code>、<code>status</code>、<code>cancel</code>、<code>replay</code>、<code>events</code></td><td>发布与查看任务。</td></tr>
+        <tr><td><code>mailbox</code></td><td><code>create</code>、<code>status</code>、<code>pause</code>、<code>resume</code>、<code>pull</code>、<code>ack</code>、<code>nack</code></td><td>管理邮箱并处理任务。</td></tr>
+        <tr><td><code>api-key</code></td><td><code>create</code>、<code>list</code>、<code>revoke</code></td><td>租户作用域 API 密钥生命周期。</td></tr>
+        <tr><td><code>policy</code></td><td><code>allow-agent</code>、<code>deny-agent</code>、<code>allow-team</code>、<code>deny-team</code>、<code>require-approval</code>、<code>allow-classification</code>、<code>deny-classification</code>、<code>allow-tool</code>、<code>deny-tool</code></td><td>通过模板生成治理策略规则。</td></tr>
+        <tr><td><code>dlq</code></td><td><code>query</code>、<code>replay</code>、<code>discard</code></td><td>死信队列检视与恢复。</td></tr>
+        <tr><td><code>dashboard</code></td><td>—</td><td>交互式 TUI，监控任务、邮箱与 Agent。</td></tr>
+    </table>
+
+    <h3 id="cli-project">项目工作流</h3>
+    <p>项目命令以代码形式管理你的租户拓扑（详见<a href="/zh/docs/configuration.html#configure">配置</a>）：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span><span class="tok-d">                    </span><span class="tok-c"># 生成 janus.project.yaml</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">validate</span><span class="tok-d">                </span><span class="tok-c"># 检查文件是否有错误</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d">                     </span><span class="tok-c"># 预览与线上 API 的差异</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-n">--all-tenants</span><span class="tok-d">      </span><span class="tok-c"># 应用所有租户</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># 将线上资源拉回文件</span></code></pre>
+
+    <h3 id="cli-api-keys">API 密钥</h3>
+    <p>API 密钥按租户作用域划分。每个环境或服务创建一把，轮换时撤销旧密钥。原始密钥只显示一次：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
+<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  （请保存 —— 只显示一次）</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
+
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
+
+    <h3 id="cli-tasks-mailboxes">任务与邮箱</h3>
+    <p>发布、拉取并确认任务 —— 与 SDK 封装的同一套生命周期，只是从命令行操作：</p>
+    <pre><code><span class="tok-c"># 向邮箱发布任务</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--source</span><span class="tok-d"> </span><span class="tok-d">product</span><span class="tok-d"> </span><span class="tok-n">--mailbox</span><span class="tok-d"> </span><span class="tok-d">review-mb</span>
+
+<span class="tok-c"># 查看任务状态</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">status</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+
+<span class="tok-c"># 从邮箱拉取下一个任务</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">pull</span><span class="tok-d"> </span><span class="tok-d">review-mb</span><span class="tok-d"> </span><span class="tok-n">--agent</span><span class="tok-d"> </span><span class="tok-d">reviewer</span>
+
+<span class="tok-c"># 检视死信队列并重放</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">query</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
+<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">replay</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    <h3 id="cli-dashboard">Dashboard</h3>
+    <p>启动交互式终端仪表盘，实时监控任务、邮箱与 Agent 健康状态：</p>
+    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dashboard</span><span class="tok-d"> </span><span class="tok-n">--server</span><span class="tok-d"> </span><span class="tok-d">http://localhost:8080</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
+
+    
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="48">
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/configuration.html">配置</a>
+                    <a href="/zh/docs/deployment.html">部署</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/docs/cli.html">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部署 — Janus</title>
+    <meta name="description" content="生产部署与分布式扩展：计算层、状态层。" >
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css?v=20260731">
+    <script src="/assets/app.js?v=20260731" defer></script>
+    <meta http-equiv="content-language" content="zh-CN">
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/zh/" class="nav-logo">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="切换菜单">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links" id="site-nav">
+            <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/configuration.html">配置</a>
+                    <a href="/zh/docs/deployment.html">部署</a>
+            <a href="/zh/docs/concepts.html">核心概念</a>
+            <a href="/zh/docs/sdk.html">SDK</a>
+            <a href="/zh/scenarios/code-review.html">场景</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/docs/deployment.html" class="lang-switch">English</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="doc-intro">
+    <div class="breadcrumb"><a href="/zh/">首页</a><span>›</span>快速开始</div>
+    <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
+    <span class="eyebrow">文档</span>
+    <h1>快速开始</h1>
+    <p>安装、配置并运行 Janus，然后完成你的第一个 Agent 到 Agent 任务交接。</p>
+</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">本页目录</div>
+        <ul>
+        <li><a href="#production">生产部署</a></li>
+        <li><a href="#distributed">分布式部署</a>
+            <ul>
+            <li><a href="#distributed-scaling">水平扩展计算层</a></li>
+            <li><a href="#distributed-state">扩展状态层</a></li>
+            </ul></li>
+        </ul>
+    </aside>
+<div class="doc-content-col">
+        <div class="doc-content">
+<h2 id="production">生产部署</h2>
+    <p>对于 Kubernetes，Janus 提供 Helm chart，内置存活/就绪探针、迁移 Job 钩子、HPA、PDB 与 Prometheus 采集注解：</p>
+    <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
+    <p>完整的 chart values 与运维手册见 <a href="https://github.com/agentium-lab/Janus">GitHub 仓库</a>。</p>
+
+    
+    <h2 id="distributed">分布式部署</h2>
+    <p>Janus Core 是无状态计算节点 —— 所有持久状态都外部化到 PostgreSQL、NATS JetStream 与 Redis。你可以横向运行多个副本，任意副本都能处理任意请求；单个副本崩溃不会丢失业务状态，流量在前端负载均衡后面均摊。</p>
+
+    <figure class="arch-diagram">
+        <div class="arch-layer">
+            <div class="arch-box arch-box-entry">负载均衡 / Ingress</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-core">
+                Janus Core（无状态）
+                <div class="arch-replicas">
+                    <span class="arch-pill">#1</span>
+                    <span class="arch-pill">#2</span>
+                    <span class="arch-pill">…</span>
+                    <span class="arch-pill">#N</span>
+                </div>
+                <div class="arch-tag">HPA · 2–10 副本</div>
+            </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-state">PostgreSQL<small>持久状态</small></div>
+            <div class="arch-box arch-box-state">NATS JetStream<small>事件 / 消息</small></div>
+            <div class="arch-box arch-box-state">Redis<small>速率 / 缓存</small></div>
+        </div>
+        <figcaption class="arch-caption">计算层无状态、可水平扩展；状态全部外部化到 PG / NATS / Redis。</figcaption>
+    </figure>
+
+    <p>多副本并行消费 outbox 事件时，靠数据库级租约互斥，做到既不重复投递也不丢事件。迁移 <code>000011_outbox_worker_lease</code> 给 <code>outbox_events</code> 表加了租约字段，<code>000012_outbox_dedupe_key</code> 加了幂等去重键：</p>
+    <pre><code>locked_by        text         -- 抢占该行的 worker
+locked_at        timestamptz
+lease_expires_at timestamptz  -- 到期后被其他 worker 回收
+dedupe_key       text         -- (tenant_id, dedupe_key) 唯一，防重复投递</code></pre>
+    <p>某个副本崩溃后，它持有的行在租约到期时由存活副本接管；<code>dedupe_key</code> 保证重试与并发调度不会重复插入同一次投递。</p>
+
+    <h3 id="distributed-scaling">水平扩展计算层</h3>
+    <p>Helm chart 默认启用 HorizontalPodAutoscaler，按 CPU / 内存自动扩缩：</p>
+    <pre><code><span class="tok-p">autoscaling</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d">  </span><span class="tok-p">minReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2</span>
+<span class="tok-d">  </span><span class="tok-p">maxReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">10</span>
+<span class="tok-d">  </span><span class="tok-p">targetCPUUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">70</span>
+<span class="tok-d">  </span><span class="tok-p">targetMemoryUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">80</span></code></pre>
+    <p>同时配了 PodDisruptionBudget（<code>minAvailable: 1</code>），滚动更新与节点维护期间始终至少一个副本可用。</p>
+
+    <h3 id="distributed-state">扩展状态层</h3>
+    <p>计算层水平扩展时，状态层各自按自己的方式扩展：</p>
+    <ul>
+        <li><strong>PostgreSQL</strong> — 单主即可承载 Janus 的工作负载；更高吞吐可用 PgBouncer 连接池，读多写少时加只读副本。</li>
+        <li><strong>NATS JetStream</strong> — 原生支持集群与 RAFT 共识，按需水平扩展 JetStream 节点即可提升消息吞吐与容错。</li>
+        <li><strong>Redis</strong> — 单实例通常够用；需要更高可用时用 Redis Cluster 或哨兵（Sentinel）。</li>
+    </ul>
+    <div class="note">Janus Core 容器以 <code>readOnlyRootFilesystem</code> 运行，唯一持久卷只用于产物落盘（<code>artifacts</code>）—— 不含任何运行态，因此副本是无状态、可随时替换的。</div>
+
+    
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="48">
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>文档</h4>
+                    <a href="/zh/docs/quickstart.html">快速开始</a>
+                    <a href="/zh/docs/configuration.html">配置</a>
+                    <a href="/zh/docs/deployment.html">部署</a>
+                    <a href="/zh/docs/concepts.html">核心概念</a>
+                    <a href="/zh/docs/sdk.html">SDK 指南</a>
+                    <a href="/zh/docs/api.html">API 参考</a>
+                </div>
+                <div class="footer-col">
+                    <h4>场景</h4>
+                    <a href="/zh/scenarios/code-review.html">代码审核</a>
+                    <a href="/zh/scenarios/multi-agent.html">多 Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>社区</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/docs/deployment.html">English</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — 让 Agent 协作在生产环境中保持可靠、可治理、可审计、可恢复。</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

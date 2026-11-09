@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment — Janus</title>
+    <meta name="description" content="Production deployment and distributed scaling: compute tier, state tier.">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css?v=20260731">
+    <script src="/assets/app.js?v=20260731" defer></script>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/docs/deployment.html" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="doc-intro">
+    <div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
+    <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
+    <span class="eyebrow">Documentation</span>
+    <h1>Quick Start</h1>
+    <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
+</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">On this page</div>
+        <ul>
+        <li><a href="#production">Production Deployment</a></li>
+        <li><a href="#distributed">Distributed Deployment</a>
+            <ul>
+            <li><a href="#distributed-scaling">Scaling the Compute Tier</a></li>
+            <li><a href="#distributed-state">Scaling the State Tier</a></li>
+            </ul></li>
+        </ul>
+    </aside>
+<div class="doc-content-col">
+        <div class="doc-content">
+<h2 id="production">Production Deployment</h2>
+    <p>For Kubernetes, Janus ships a Helm chart with liveness/readiness probes, a migration Job hook, HPA, PDB, and Prometheus scrape annotations:</p>
+    <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
+    <p>See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for the full chart values and the ops runbook.</p>
+
+    
+    <h2 id="distributed">Distributed Deployment</h2>
+    <p>Janus Core is a stateless compute node — all persistent state is externalized to PostgreSQL, NATS JetStream, and Redis. You can run multiple replicas horizontally; any replica can serve any request, a single replica crash loses no business state, and traffic is balanced behind a front load balancer.</p>
+
+    <figure class="arch-diagram">
+        <div class="arch-layer">
+            <div class="arch-box arch-box-entry">Load Balancer / Ingress</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-core">
+                Janus Core (stateless)
+                <div class="arch-replicas">
+                    <span class="arch-pill">#1</span>
+                    <span class="arch-pill">#2</span>
+                    <span class="arch-pill">…</span>
+                    <span class="arch-pill">#N</span>
+                </div>
+                <div class="arch-tag">HPA · 2–10 replicas</div>
+            </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer">
+            <div class="arch-box arch-box-state">PostgreSQL<small>persistent state</small></div>
+            <div class="arch-box arch-box-state">NATS JetStream<small>events / messaging</small></div>
+            <div class="arch-box arch-box-state">Redis<small>rate limit / cache</small></div>
+        </div>
+        <figcaption class="arch-caption">The compute tier scales horizontally; all state is externalized to PG / NATS / Redis.</figcaption>
+    </figure>
+
+    <p>When multiple replicas consume outbox events concurrently, a database-level lease provides mutual exclusion so events are neither double-delivered nor lost. Migration <code>000011_outbox_worker_lease</code> adds lease columns to <code>outbox_events</code>, and <code>000012_outbox_dedupe_key</code> adds an idempotency key:</p>
+    <pre><code>locked_by        text         -- worker that claimed the row
+locked_at        timestamptz
+lease_expires_at timestamptz  -- reclaimable by another worker after expiry
+dedupe_key       text         -- unique (tenant_id, dedupe_key) prevents double delivery</code></pre>
+    <p>If a replica crashes, its locked rows are reclaimed by a live replica once the lease expires; <code>dedupe_key</code> guarantees retries and concurrent schedulers never insert the same delivery twice.</p>
+
+    <h3 id="distributed-scaling">Scaling the Compute Tier</h3>
+    <p>The Helm chart enables the HorizontalPodAutoscaler by default, auto-scaling on CPU and memory:</p>
+    <pre><code><span class="tok-p">autoscaling</span><span class="tok-o">:</span>
+<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
+<span class="tok-d">  </span><span class="tok-p">minReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2</span>
+<span class="tok-d">  </span><span class="tok-p">maxReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">10</span>
+<span class="tok-d">  </span><span class="tok-p">targetCPUUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">70</span>
+<span class="tok-d">  </span><span class="tok-p">targetMemoryUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">80</span></code></pre>
+    <p>A PodDisruptionBudget (<code>minAvailable: 1</code>) keeps at least one replica available during rollouts and node maintenance.</p>
+
+    <h3 id="distributed-state">Scaling the State Tier</h3>
+    <p>As the compute tier scales horizontally, each state store scales its own way:</p>
+    <ul>
+        <li><strong>PostgreSQL</strong> — a single primary handles Janus's workload; add PgBouncer for higher throughput, and read replicas for read-heavy access patterns.</li>
+        <li><strong>NATS JetStream</strong> — natively supports clustering with RAFT consensus; scale JetStream nodes horizontally for more messaging throughput and fault tolerance.</li>
+        <li><strong>Redis</strong> — a single instance is usually enough; use Redis Cluster or Sentinel when you need higher availability.</li>
+    </ul>
+    <div class="note">Janus Core runs with a <code>readOnlyRootFilesystem</code>; the only persistent volume is for artifact storage (<code>artifacts</code>) — it holds no runtime state, so replicas are stateless and replaceable at any time.</div>
+
+    
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="48">
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/docs/deployment.html">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

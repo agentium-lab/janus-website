@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial: Smart Customer Service — Janus</title>
+    <meta name="description" content="A pattern walkthrough: intent routing, crash recovery, parallel fan-out, and data passing between agents.">
+    <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
+    <link rel="stylesheet" href="/assets/style.css?v=20260731">
+    <script src="/assets/app.js?v=20260731" defer></script>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="bg-grid"></span>
+</div>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <img src="/assets/janus-logo-dark.svg" alt="Janus" height="54">
+        </a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label" role="button" tabindex="0" aria-controls="site-nav" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </label>
+        <div class="nav-links">
+            <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
+            <a href="/docs/concepts.html">Concepts</a>
+            <a href="/docs/sdk.html">SDK</a>
+            <a href="/scenarios/code-review.html">Scenarios</a>
+            <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub ↗</a>
+            <a href="/zh/docs/tutorial.html" class="lang-switch">中文</a>
+        </div>
+    </div>
+</nav>
+
+<div class="doc-hero">
+    <span class="doc-hero-glow" aria-hidden="true"></span>
+</div>
+<div class="doc-intro">
+    <div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
+    <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
+    <span class="eyebrow">Documentation</span>
+    <h1>Quick Start</h1>
+    <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
+</div>
+<div class="doc-layout">
+    <aside class="doc-toc" id="doc-toc">
+        <div class="doc-toc-title">On this page</div>
+        <ul>
+        <li><a href="#example-smart-service">Complete Example: Smart Customer Service Center</a></li>
+        </ul>
+    </aside>
+<div class="doc-content-col">
+        <div class="doc-content">
+<h2 id="example-smart-service">Complete Example: Smart Customer Service Center</h2>
+    <p class="section-sub"><strong>Pattern walkthrough</strong> — snippets illustrate the flow; each assumes the <code>JanusClient</code> from the steps above (with <code>from janus_broker import AckRequest</code>) and agents/m mailboxes registered as shown. In production, wrap pulls in a <code>JanusWorker</code> loop.</p>
+    <p>This section walks through a real-world multi-agent scenario — <strong>handling a customer complaint about a wrong item delivery</strong> — to show how Janus's routing, durability, and governance features work together in a production-like workflow.</p>
+
+    <h3>What You'll Learn</h3>
+    <ul>
+        <li>Using <code>target_type: intent</code> with LLM-powered natural language routing</li>
+        <li>Capability-based routing (<code>target_type: capability</code>)</li>
+        <li>Team-based routing (<code>target_type: group</code>)</li>
+        <li>Task lease expiry and automatic recovery when an agent crashes</li>
+        <li>Parallel task fan-out and barrier-style synchronization</li>
+        <li>Data passing between agents (Agent A's output becomes Agent B's input)</li>
+    </ul>
+
+    <h3>The Scenario</h3>
+    <p>A customer reports: <em>"I ordered a red phone but received a blue one. I need an exchange."</em></p>
+    <p>Janus coordinates <strong>four agents</strong> to resolve this:</p>
+    <ol>
+        <li><strong>Logistics Bot</strong> — investigates the original order (capability: <code>wrong_item_investigate</code>, team: <code>logistics</code>)</li>
+        <li><strong>Shipping Bot</strong> — ships the correct red phone (capability: <code>reship</code>, team: <code>warehouse</code>)</li>
+        <li><strong>Return Bot</strong> — arranges pickup of the wrong blue phone (capability: <code>retrieve_wrong</code>, team: <code>warehouse</code>)</li>
+        <li><strong>Notify Bot</strong> — sends status updates to the customer (capability: <code>notify</code>, team: <code>support</code>)</li>
+    </ol>
+
+    <h3>The Flow (With Failure Injection)</h3>
+    <pre>
+Customer: "I ordered red, got blue"
+    │
+    ▼  intent LLM → "wrong_item_investigate"
+    │
+Logistics-bot ─── pulls order ─── 💀 crashes (no ACK) ─── lease expires ─── recovers ─── ACKs
+    │
+    │  data: {order: "ORD-789", ordered: "red", shipped: "blue"}
+    ▼
+    ├── ► Shipping-bot ─── ships correct red ─── ACK {tracking: "SF789"}
+    ├── ► Return-bot   ─── picks up wrong blue ─── ACK {pickup: "PU123"}
+    └── ► Notify-bot   ─── "exchange started" ─── ACK
+            │
+            ▼
+         Notify-bot ─── "red shipped SF789, blue pickup PU123" ─── ACK</pre>
+
+    <p><strong>Key design:</strong> The logistics-bot's investigation result (<em>which item is correct, which is wrong</em>) drives the downstream agents — the shipping-bot reads the investigation data to know <em>what</em> to ship; the return-bot reads it to know <em>what</em> to retrieve. Agents don't just acknowledge tasks — they <strong>produce data that other agents consume</strong>.</p>
+
+    <h3>Step 1: Register Agents and Their Capabilities</h3>
+    <p>Each agent declares what it can do (<code>capability</code>) and which team it belongs to (<code>team</code>). Janus uses capabilities for matching and teams for group routing.</p>
+    <pre><code><span class="tok-c"># Register the four agents</span>
+<span class="tok-k">for</span><span class="tok-d"> </span><span class="tok-t">agent</span><span class="tok-d"> </span><span class="tok-k">in</span><span class="tok-d"> </span><span class="tok-o">[</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Logistics Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Shipping Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Return Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Notify Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"support"</span><span class="tok-o">}</span>
+<span class="tok-o">]</span><span class="tok-o">:</span>
+<span class="tok-d">    </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_agent</span><span class="tok-o">(</span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"id"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"display_name"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"team"</span><span class="tok-o">]</span><span class="tok-o">)</span></code></pre>
+
+    <p>Then assign capabilities and create mailboxes (task queues) for each agent:</p>
+    <pre><code><span class="tok-c"># Capabilities: what each agent can do</span>
+<span class="tok-d">caps</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"wrong_item_investigate"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">:</span><span class="tok-d">  </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"return-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"notify-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
+<span class="tok-o">}</span>
+<span class="tok-c"># Create mailboxes (each with a 5-second ACK timeout for logistics)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">ack_wait</span><span class="tok-o">=</span><span class="tok-n">5</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
+<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span></code></pre>
+
+    <h3>Step 2: Publish with Intent Routing (LLM-Powered)</h3>
+    <p>Instead of specifying a concrete agent or capability, use <code>target_type: intent</code> with natural language. Janus's LLM-powered resolver maps the request to the best matching capability:</p>
+    <pre><code><span class="tok-c"># Customer complaint → LLM resolves to "wrong_item_investigate"</span>
+<span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
+<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-s">"task-001"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"customer"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"intent"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"received wrong item, ordered red but got blue, need exchange"</span><span class="tok-o">,</span>
+<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d">     </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"complaint"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">}</span><span class="tok-o">}</span>
+<span class="tok-o">}</span><span class="tok-o">)</span>
+<span class="tok-c"># Janus automatically resolves:</span>
+<span class="tok-c">#   target_type: "capability"</span>
+<span class="tok-c">#   target_value: "wrong_item_investigate"</span>
+<span class="tok-c">#   → routes to logistics-mb (logistics-bot's mailbox)</span></code></pre>
+
+    <h3>Step 3: Lease Expiry — Testing Durability</h3>
+    <p>Janus guarantees at-least-once delivery. When an agent pulls a task and <strong>crashes without ACKing</strong>, the lease expires and the task automatically returns to the queue:</p>
+    <pre><code><span class="tok-c"># logistics-bot pulls the task...</span>
+<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">)</span>
+
+<span class="tok-c"># Simulate a crash — do NOT ACK, just stop.</span>
+<span class="tok-c"># After the lease expires (5 seconds with our config),</span>
+<span class="tok-c"># Janus automatically re-delivers the task to the mailbox.</span>
+
+<span class="tok-c"># When the agent recovers and pulls again:</span>
+<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">)</span>
+<span class="tok-c"># &lt;- same task! Janus redelivered it after lease expiry.</span>
+
+<span class="tok-c"># Now ACK with the investigation results (data for downstream agents):</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"confirmed": true, "order": "ORD-789", "ordered": "red", "shipped": "blue"}'</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
+
+    <h3>Step 4: Fan-Out — Three Parallel Branches</h3>
+    <p>After confirming the wrong item, Janus orchestrates three parallel workflows. Each branch routes differently — <strong>capability routing</strong> for shipping/return, <strong>group routing</strong> for notifications:</p>
+    <pre><code><span class="tok-c"># Branch A: ship the correct item (capability routing)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"order\": \"ORD-789\", \"correct\": \"red\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span>
+<span class="tok-c"># -&gt; Janus finds shipping-bot (capability: reship) and routes to shipping-mb</span>
+
+<span class="tok-c"># Branch B: retrieve the wrong item (capability routing)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"order\": \"ORD-789\", \"wrong\": \"blue\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span>
+
+<span class="tok-c"># Branch C: notify the customer (capability routing to the support team)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"message\": \"exchange started\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
+
+    <h3>Step 5: Each Agent Processes Its Branch</h3>
+    <p>Each agent independently pulls, processes, and ACKs its task, producing result data that flows to downstream agents:</p>
+    <pre><code><span class="tok-c"># shipping-bot: pull -&gt; process -&gt; ACK with the tracking number</span>
+<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"tracking": "SF789", "reshipped": true}'</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span>
+
+<span class="tok-c"># return-bot: pull -&gt; process -&gt; ACK with pickup info</span>
+<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"return-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-d">)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"return-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"pickup": "PU123", "scheduled": true}'</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span>
+
+<span class="tok-c"># notify-bot: pull -&gt; ACK (initial notification)</span>
+<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"notify-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-d">)</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"notify-bot"</span><span class="tok-d">,</span>
+<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
+
+    <h3>Step 6: Data Fan-In — Combine Results</h3>
+    <p>After both shipping and return complete, publish a final notification with <strong>both results combined</strong> — demonstrating how agents pass data through the system:</p>
+    <pre><code><span class="tok-c"># Pattern illustration: the branch results above arrive as ACKed</span>
+<span class="tok-c"># result_refs on their own tasks; in a real app, read them via</span>
+<span class="tok-c"># get_task_events("ship-001") / get_task_events("ret-001") (or your own</span>
+<span class="tok-c"># result store) and combine. Here we inline the values for brevity:</span>
+<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
+<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"shipping\": {\"tracking\": \"SF789\"}, \"return\": {\"pickup\": \"PU123\"}, \"message\": \"Red phone shipped (SF789), blue phone pickup (PU123)\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
+<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
+
+    <div class="note"><strong>What this example demonstrates:</strong> This is a complete production-like workflow covering intent routing (LLM-powered NL → capability), capability routing (find the right agent by what it can do), multiple routing types in one pipeline, lease expiry recovery (crash simulation), parallel branches, and data passing between agents. The same patterns apply to customer support, order fulfillment, claims processing, and any multi-agent workflow where agents need to collaborate and pass data.</div>
+
+    
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/assets/janus-logo-dark.svg" alt="Janus" height="48">
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Docs</h4>
+                    <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
+                    <a href="/docs/concepts.html">Concepts</a>
+                    <a href="/docs/sdk.html">SDK Guide</a>
+                    <a href="/docs/api.html">API Reference</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Scenarios</h4>
+                    <a href="/scenarios/code-review.html">Code Review</a>
+                    <a href="/scenarios/multi-agent.html">Multi-Agent</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Community</h4>
+                    <a href="https://github.com/agentium-lab/Janus" target="_blank">GitHub</a>
+                    <a href="/zh/docs/tutorial.html">中文</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Janus — Keep agent collaboration reliable, governed, auditable, and recoverable in production.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

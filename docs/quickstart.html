@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Start — Janus</title>
-    <meta name="description" content="Install, configure, and run Janus. Publish, pull, and acknowledge your first agent task.">
+    <meta name="description" content="Your first task handoff in five minutes: start Janus, install the SDK, publish, pull, and complete.">
     <link rel="icon" type="image/svg+xml" href="/assets/janus-mark.svg">
     <link rel="stylesheet" href="/assets/style.css?v=20260731">
     <script src="/assets/app.js?v=20260731" defer></script>
@@ -27,6 +27,8 @@
         </label>
         <div class="nav-links">
             <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
             <a href="/docs/concepts.html">Concepts</a>
             <a href="/docs/sdk.html">SDK</a>
             <a href="/scenarios/code-review.html">Scenarios</a>
@@ -48,50 +50,28 @@
 </div>
 <div class="doc-layout">
     <aside class="doc-toc" id="doc-toc">
-        <div class="doc-toc-title">Contents</div>
+        <div class="doc-toc-title">On this page</div>
         <ul>
-            <li><a href="#prerequisites">Prerequisites</a></li>
-            <li><a href="#get-source">1. Get the Source</a></li>
-            <li><a href="#start-janus">2. Start with Docker</a></li>
-            <li><a href="#build-from-source">3. Build from Source</a></li>
-            <li><a href="#configure">4. Configure</a>
-                <ul>
-                    <li><a href="#config-env-vars">Environment Variables</a></li>
-                    <li><a href="#config-yaml">YAML Config File</a></li>
-                    <li><a href="#config-project">Project Config</a></li>
-                    <li><a href="#config-field-reference">Field Reference</a></li>
-                    <li><a href="#config-multi-agent">Multi-Agent Example</a></li>
-                    <li><a href="#config-dynamic-agent">Dynamic Agents</a></li>
-                    <li><a href="#config-auth">Authentication</a></li>
-                </ul>
-            </li>
-            <li><a href="#install-sdk">5. Install the SDK</a></li>
-            <li><a href="#publish-task">6. Publish a Task</a></li>
-            <li><a href="#pull-task">7. Pull &amp; Complete</a></li>
-            <li><a href="#verify-cli">8. Verify via CLI</a></li>
-            <li><a href="#cli-reference">CLI Reference</a>
-                <ul>
-                    <li><a href="#cli-global-flags">Global Flags</a></li>
-                    <li><a href="#cli-command-tree">Command Groups</a></li>
-                    <li><a href="#cli-project">Project Workflow</a></li>
-                    <li><a href="#cli-api-keys">API Keys</a></li>
-                    <li><a href="#cli-tasks-mailboxes">Tasks &amp; Mailboxes</a></li>
-                    <li><a href="#cli-dashboard">Dashboard</a></li>
-                </ul>
-            </li>
-            <li><a href="#production">Production</a></li>
-            <li><a href="#distributed">Distributed</a>
-                <ul>
-                    <li><a href="#distributed-scaling">Scaling the Compute Tier</a></li>
-                    <li><a href="#distributed-state">Scaling the State Tier</a></li>
-                </ul>
-            </li>
-            <li><a href="#example-smart-service">Complete Example：Smart CS</a></li>
-            <li><a href="#whats-next">What's Next</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#get-source">1. Get the Janus Source</a></li>
+        <li><a href="#start-janus">2. Start Janus with Docker Compose</a></li>
+        <li><a href="#install-sdk">5. Install the Python SDK</a></li>
+        <li><a href="#publish-task">6. Publish a Task</a>
+            <ul>
+            <li><a href="#target-types">Target Types</a></li>
+            </ul></li>
+        <li><a href="#pull-task">7. Pull and Complete the Task</a></li>
+        <li><a href="#verify-cli">8. Verify via CLI</a>
+            <ul>
+            <li><a href="#troubleshooting">Troubleshooting the first run</a></li>
+            </ul></li>
+        <li><a href="#whats-next">What's Next</a></li>
         </ul>
     </aside>
-    <div class="doc-content-col">
+<div class="doc-content-col">
         <div class="doc-content">
+<p class="section-sub">Going deeper: <a href="/docs/configuration.html">Configuration &amp; Auth</a> · <a href="/docs/cli.html">CLI Reference</a> · <a href="/docs/deployment.html">Production Deployment</a> · <a href="/docs/tutorial.html">Smart CS Walkthrough</a></p>
+
     <h2 id="prerequisites">Prerequisites</h2>
     <ul>
         <li><strong>Docker &amp; Docker Compose</strong> (recommended path)</li>
@@ -99,6 +79,7 @@
         <li><em>Or, to build from source:</em> Go 1.25+, PostgreSQL 13+, NATS 2.10+ (JetStream, optional — PostgreSQL is the default queue), Redis 7+</li>
     </ul>
 
+    
     <h2 id="get-source">1. Get the Janus Source</h2>
     <p>The Janus repository ships with a production-ready <code>Dockerfile</code> and <code>docker-compose.yml</code>. Clone it to get everything you need:</p>
     <pre><code><span class="tok-f">git</span><span class="tok-d"> </span><span class="tok-d">clone</span><span class="tok-d"> </span><span class="tok-d">https</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">github</span><span class="tok-o">.</span><span class="tok-d">com</span><span class="tok-o">/</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">Janus</span><span class="tok-o">.</span><span class="tok-d">git</span>
@@ -111,6 +92,7 @@
         <li><code>migrations/</code> — PostgreSQL schema migrations (auto-applied on boot)</li>
     </ul>
 
+    
     <h2 id="start-janus">2. Start Janus with Docker Compose</h2>
     <p>From the repo root, a single command builds the Janus image and starts all four services (janus-api, postgres:16, nats:2 with JetStream, redis:7 — in production NATS is optional: PostgreSQL is the default queue, and the Compose stack simply includes it for the event fan-out demos):</p>
     <pre><code><span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-n">--build</span></code></pre>
@@ -130,357 +112,11 @@
         <li><code>9090</code> — gRPC API</li>
     </ul>
 
-    <h2 id="build-from-source">3. Build from Source (optional)</h2>
-    <p>To run Janus outside Docker (development, custom builds, debugging):</p>
-    <pre><code><span class="tok-c"># Start the three dependencies</span>
-<span class="tok-f">docker</span><span class="tok-d"> </span><span class="tok-d">compose</span><span class="tok-d"> </span><span class="tok-n">-f</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">smoke-deps</span><span class="tok-o">.</span><span class="tok-d">compose</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">up</span><span class="tok-d"> </span><span class="tok-n">-d</span><span class="tok-d"> </span><span class="tok-d">postgres</span><span class="tok-d"> </span><span class="tok-d">nats</span><span class="tok-d"> </span><span class="tok-d">redis</span>
-
-<span class="tok-c"># Build the server binary</span>
-<span class="tok-f">cd</span><span class="tok-d"> </span><span class="tok-d">server</span><span class="tok-d"> </span><span class="tok-o">&amp;</span><span class="tok-o">&amp;</span><span class="tok-d"> </span><span class="tok-d">go</span><span class="tok-d"> </span><span class="tok-d">build</span><span class="tok-d"> </span><span class="tok-n">-o</span><span class="tok-d"> </span><span class="tok-d">janus-api</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">cmd</span><span class="tok-o">/</span><span class="tok-d">janus-api</span><span class="tok-o">/</span>
-
-<span class="tok-c"># Run with environment variables</span>
-<span class="tok-d">JANUS_PG_HOST</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_USER</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">JANUS_PG_DATABASE</span><span class="tok-o">=</span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_NATS_URL</span><span class="tok-o">=</span><span class="tok-d">nats</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">4222</span><span class="tok-d"> </span><span class="tok-d">JANUS_REDIS_ADDR</span><span class="tok-o">=</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-d">6379</span><span class="tok-d"> </span><span class="tok-d">\</span>
-<span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-d">false</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
-
-    <h2 id="configure">4. Configure Janus</h2>
-    <p>Janus reads configuration from <strong>environment variables</strong> (highest priority) and/or a <strong>YAML config file</strong>. The Compose file already wires up sensible defaults for local development.</p>
-
-    <h3 id="config-env-vars">Environment Variables</h3>
-    <p>The most commonly tuned variables (all prefixed <code>JANUS_</code>):</p>
-    <table>
-        <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
-        <tr><td><code>JANUS_CONFIG_FILE</code></td><td>—</td><td>Path to a YAML config file; environment variables still take precedence over file values</td></tr>
-        <tr><td><code>JANUS_HTTP_PORT</code></td><td>8080</td><td>HTTP REST API port</td></tr>
-        <tr><td><code>JANUS_GRPC_PORT</code></td><td>9090</td><td>gRPC API port</td></tr>
-        <tr><td><code>JANUS_PG_HOST</code></td><td>localhost</td><td>PostgreSQL host</td></tr>
-        <tr><td><code>JANUS_PG_PORT</code></td><td>5432</td><td>PostgreSQL port</td></tr>
-        <tr><td><code>JANUS_PG_USER</code> / <code>PASSWORD</code> / <code>DATABASE</code></td><td>janus</td><td>PostgreSQL credentials</td></tr>
-        <tr><td><code>JANUS_NATS_URL</code></td><td>nats://localhost:4222</td><td>NATS connection URL</td></tr>
-        <tr><td><code>JANUS_REDIS_ADDR</code></td><td>localhost:6379</td><td>Redis address (rate-limit &amp; heartbeat)</td></tr>
-        <tr><td><code>JANUS_AUTH_ENABLED</code></td><td>true</td><td>Enable API key authentication</td></tr>
-        <tr><td><code>JANUS_MIGRATION_AUTO</code></td><td>false</td><td>Auto-run DB migrations on boot</td></tr>
-        <tr><td><code>JANUS_TLS_ENABLED</code></td><td>false</td><td>Enable TLS (set with CERT_FILE / KEY_FILE / CLIENT_CA_FILE)</td></tr>
-    </table>
-
-    <h3 id="config-yaml">YAML Config File</h3>
-    <p>For complex deployments, point Janus at a YAML file via <code>JANUS_CONFIG_FILE</code>. Start from the reference file:</p>
-    <pre><code><span class="tok-d">cp</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">example</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
-
-<span class="tok-c"># Then run with:</span>
-<span class="tok-d">JANUS_CONFIG_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">local</span><span class="tok-o">.</span><span class="tok-d">yaml</span><span class="tok-d"> </span><span class="tok-o">.</span><span class="tok-o">/</span><span class="tok-d">janus-api</span></code></pre>
-    <p>The YAML mirrors the environment variables and adds structured sections for the outbox, heartbeat, and observability:</p>
-    <pre><code><span class="tok-d">server</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">http_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">8080</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">grpc_port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">9090</span>
-
-<span class="tok-d">postgres</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">host</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">localhost</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">port</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5432</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">user</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">password</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">${JANUS_PG_PASSWORD}</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># env interpolation supported</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">database</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">janus</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_conns</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">20</span>
-
-<span class="tok-d">nats</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">url</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;nats://localhost:4222&quot;</span>
-
-<span class="tok-d">cache</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">driver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">redis</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">addr</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;localhost:6379&quot;</span>
-
-<span class="tok-d">log</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">level</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">info</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># debug | info | warn | error</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">format</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">json</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># json | text</span>
-
-<span class="tok-d">migration</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">auto</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">migrations</span><span class="tok-o">/</span>
-
-<span class="tok-d">outbox</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enable</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">batch_size</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">100</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">max_retries</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">5</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># retry exhausted → dead letter queue</span>
-
-<span class="tok-d">observability</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">metrics</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">path</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">/</span><span class="tok-d">metrics</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">tracing</span><span class="tok-o">:</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">false</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">&quot;&quot;</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># OTLP collector endpoint</span></code></pre>
-
-    <h3 id="config-project">Project Config (Declarative)</h3>
-    <p>A second YAML file — the <strong>project config</strong> — declares your agents, budgets, and governance policies as code. It complements the server config above (connections &amp; runtime): the project file defines your <em>tenant topology</em>. Apply it with the Janus CLI:</p>
-    <pre><code><span class="tok-c"># 1. Generate a starter janus.project.yaml in the current directory</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span>
-
-<span class="tok-c"># 2. Edit it to declare agents, budgets, and policies</span>
-<span class="tok-c">#    (full schema: configs/janus.project.example.yaml)</span>
-
-<span class="tok-c"># 3. Preview the changes without applying them</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span>
-
-<span class="tok-c"># 4. Apply (idempotent — safe to re-run in CI/CD)</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span></code></pre>
-    <p><strong>How the CLI finds the project file</strong> — resolved in this order (first hit wins):</p>
-    <table>
-        <tr><th>Priority</th><th>Source</th><th>Example</th></tr>
-        <tr><td>1</td><td><code>--file</code> flag</td><td><code>janus project apply --file configs/janus.project.yaml</code></td></tr>
-        <tr><td>2</td><td><code>JANUS_PROJECT_FILE</code> env var</td><td><code>export JANUS_PROJECT_FILE=configs/janus.project.yaml</code></td></tr>
-        <tr><td>3</td><td><code>janus.project.yaml</code> in the current directory (default)</td><td>run <code>janus project init</code> to create it</td></tr>
-    </table>
-    <p><code>JANUS_PROJECT_FILE</code> tells the <strong>CLI</strong> where to look — the API server does not read it directly. End-to-end example:</p>
-    <pre><code><span class="tok-c"># Generate the starter file</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span>
-
-<span class="tok-c"># Declare agents, budgets, and policies in the YAML (see below)</span>
-
-<span class="tok-c"># Apply the file explicitly by path</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_PROJECT_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># review</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-c"># apply (idempotent)</span></code></pre>
-    <p>A project file declares the full tenant topology — agents and their capabilities, per-tenant and per-team budgets, and allow/deny/approve policies:</p>
-    <pre><code><span class="tok-p">version</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">v1</span>
-<span class="tok-p">default_tenant</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-
-<span class="tok-p">defaults</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">protocol</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span>
-<span class="tok-d">  </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">300</span>
-<span class="tok-d">    </span><span class="tok-p">max_deliver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">5</span>
-<span class="tok-d">  </span><span class="tok-p">policy</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">priority</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
-
-<span class="tok-p">tenants</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">acme</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Acme Engineering</span>
-
-<span class="tok-d">    </span><span class="tok-p">agents</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">code-review</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
-<span class="tok-d">            </span><span class="tok-p">data_classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[public, internal, confidential]</span>
-<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
-
-<span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span><span class="tok-c"># tokens per minute</span>
-<span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
-<span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
-
-<span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-c"># require human approval</span>
-<span class="tok-d">      </span><span class="tok-p">allow</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code-review</span>
-<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
-<span class="tok-d">      </span><span class="tok-p">deny</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">intern-agent</span>
-<span class="tok-d">          </span><span class="tok-p">tool</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy.prod</span>
-<span class="tok-d">      </span><span class="tok-p">data_classification</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">deny</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">interns</span>
-<span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
-    <p>Full schema: <code>configs/janus.project.example.yaml</code> in the repo.</p>
-
-    <h3 id="config-field-reference">Field Reference</h3>
-    <p>Every field maps to a Janus core resource. The tables below explain each level of the file.</p>
-
-    <p><strong>Top level</strong></p>
-    <table>
-        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-        <tr><td><code>version</code></td><td>string</td><td>Schema version. Currently <code>v1</code>. <strong>Required.</strong></td></tr>
-        <tr><td><code>default_tenant</code></td><td>string</td><td>Tenant targeted when <code>--tenant</code> isn't passed. Must exist under <code>tenants</code>.</td></tr>
-        <tr><td><code>defaults</code></td><td>object</td><td>Values inherited by every tenant and agent unless overridden locally.</td></tr>
-        <tr><td><code>tenants</code></td><td>map</td><td>Tenant declarations, keyed by tenant ID. <strong>Required.</strong></td></tr>
-    </table>
-
-    <p><strong><code>defaults</code></strong> — inherited by all tenants:</p>
-    <table>
-        <tr><th>Field</th><th>Default</th><th>Description</th></tr>
-        <tr><td><code>protocol</code></td><td><code>custom-sdk</code></td><td>Agent communication protocol. Applied when an agent doesn't set its own.</td></tr>
-        <tr><td><code>classification</code></td><td>—</td><td>Default data classification. One of: <code>public</code>, <code>internal</code>, <code>confidential</code>, <code>restricted</code>.</td></tr>
-        <tr><td><code>mailbox.ack_wait_seconds</code></td><td>—</td><td>Seconds before an unacked task is redelivered to the mailbox.</td></tr>
-        <tr><td><code>mailbox.max_deliver</code></td><td>—</td><td>Max delivery attempts before the task moves to the dead letter queue.</td></tr>
-        <tr><td><code>mailbox.retention_seconds</code></td><td>—</td><td>How long completed mailbox state is retained.</td></tr>
-        <tr><td><code>capacity.max_concurrency</code></td><td><code>1</code></td><td>Default max concurrent in-flight tasks per agent.</td></tr>
-        <tr><td><code>policy.priority</code></td><td>—</td><td>Priority assigned to auto-generated policy rules (higher = evaluated first).</td></tr>
-    </table>
-
-    <p><strong>Tenant</strong> (<code>tenants.&lt;id&gt;</code>):</p>
-    <table>
-        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-        <tr><td><code>name</code></td><td>string</td><td>Human-readable display name.</td></tr>
-        <tr><td><code>agents</code></td><td>map</td><td>Agent declarations keyed by agent ID.</td></tr>
-        <tr><td><code>budgets</code></td><td>object</td><td>Cost and rate limits at tenant, team, agent, model, and task scope.</td></tr>
-        <tr><td><code>policies</code></td><td>object</td><td>Allow, deny, approval, and data-classification rules compiled into policy templates.</td></tr>
-    </table>
-
-    <p><strong>Agent</strong> (<code>tenants.&lt;id&gt;.agents.&lt;id&gt;</code>):</p>
-    <table>
-        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-        <tr><td><code>name</code></td><td>string</td><td>Display name. Defaults to the agent ID.</td></tr>
-        <tr><td><code>team</code></td><td>string</td><td>Team ID. Enables team-level budgets and policy targeting.</td></tr>
-        <tr><td><code>protocol</code></td><td>string</td><td>Overrides <code>defaults.protocol</code> for this agent.</td></tr>
-        <tr><td><code>endpoint</code></td><td>string</td><td>Callback URL where the agent receives task notifications.</td></tr>
-        <tr><td><code>description</code></td><td>string</td><td>Free-text description of what the agent does.</td></tr>
-        <tr><td><code>capabilities</code></td><td>list</td><td>Capabilities this agent can handle. Each entry is a string or an object with <code>id</code>, <code>description</code>, and <code>data_classifications</code>. <strong>Required — at least one.</strong></td></tr>
-        <tr><td><code>concurrency</code></td><td>int</td><td>Max concurrent in-flight tasks. Overrides <code>capacity.max_concurrency</code>.</td></tr>
-        <tr><td><code>rpm</code> / <code>tpm</code></td><td>int</td><td>Requests-per-minute and tokens-per-minute metadata for budget enforcement.</td></tr>
-        <tr><td><code>mailbox</code></td><td>object</td><td>Per-agent mailbox override. If omitted, a default mailbox <code>&lt;agent-id&gt;.default</code> is auto-created.</td></tr>
-    </table>
-
-    <p><strong>Budget limits</strong> — each budget scope accepts the same fields:</p>
-    <table>
-        <tr><th>Field</th><th>Description</th></tr>
-        <tr><td><code>rpm</code></td><td>Max requests per minute.</td></tr>
-        <tr><td><code>tpm</code></td><td>Max tokens per minute.</td></tr>
-        <tr><td><code>concurrency</code></td><td>Max concurrent operations.</td></tr>
-        <tr><td><code>daily_usd</code></td><td><em>Project-config entry: not wired.</em> Daily cost thresholds ARE enforced — via the budgets API/CLI (<code>daily_cost_usd</code>, estimated at a fixed rate from ACK-reported tokens), not through this project-file field.</td></tr>
-        <tr><td><code>monthly_usd</code></td><td><em>Planned.</em> Not yet enforced — awaiting trusted token metering.</td></tr>
-    </table>
-    <p>Budget scopes: <code>tenant</code> (whole tenant), <code>teams.&lt;id&gt;</code>, <code>agents.&lt;id&gt;</code>, <code>models.&lt;id&gt;</code>, <code>model_providers.&lt;id&gt;</code>, <code>tasks.&lt;id&gt;</code>.</p>
-
-    <p><strong>Policies</strong> — compiled into policy rules via templates:</p>
-    <table>
-        <tr><th>Field</th><th>Description</th></tr>
-        <tr><td><code>approve.capabilities</code></td><td>Capabilities that require human approval before execution.</td></tr>
-        <tr><td><code>approve.tools</code></td><td>Tools that require human approval before invocation.</td></tr>
-        <tr><td><code>allow</code> / <code>deny</code></td><td>Bindings of <code>agent</code> or <code>team</code> to a <code>capability</code> or <code>tool</code>. A binding must set exactly one of agent/team and one of capability/tool.</td></tr>
-        <tr><td><code>data_classification.allow/deny</code></td><td>Controls which data classifications an agent or team may receive.</td></tr>
-    </table>
-
-    <h3 id="config-multi-agent">Multi-Agent Example</h3>
-    <p>A realistic project file with three agents across two teams, per-team budgets, and governance policies:</p>
-    <pre><code><span class="tok-p">version</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">v1</span>
-<span class="tok-p">default_tenant</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-
-<span class="tok-p">defaults</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">protocol</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span>
-<span class="tok-d">  </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">300</span>
-<span class="tok-d">    </span><span class="tok-p">max_deliver</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">5</span>
-<span class="tok-d">  </span><span class="tok-p">policy</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">priority</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">100</span>
-
-<span class="tok-p">tenants</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">acme</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-p">name</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Acme Engineering</span>
-<span class="tok-d">    </span><span class="tok-p">agents</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">code-review</span><span class="tok-o">:</span><span class="tok-d">          </span><span class="tok-c"># agent 1: reviews pull requests</span>
-<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
-<span class="tok-d">            </span><span class="tok-p">data_classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[public, internal, confidential]</span>
-<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
-<span class="tok-d">      </span><span class="tok-p">test-runner</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-c"># agent 2: runs test suites</span>
-<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">engineering</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[test_run]</span>
-<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">8</span>
-<span class="tok-d">      </span><span class="tok-p">deploy-bot</span><span class="tok-o">:</span><span class="tok-d">            </span><span class="tok-c"># agent 3: production deployments</span>
-<span class="tok-d">        </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">sre</span>
-<span class="tok-d">        </span><span class="tok-p">endpoint</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">https://deploy.internal.acme.com</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">id</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">prod_deploy</span>
-<span class="tok-d">            </span><span class="tok-p">description</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">Deploy to production</span>
-<span class="tok-d">        </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">1</span>
-<span class="tok-d">        </span><span class="tok-p">mailbox</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-p">ack_wait_seconds</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600</span><span class="tok-d">    </span><span class="tok-c"># deploys take longer</span>
-<span class="tok-d">    </span><span class="tok-p">budgets</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">tenant</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2000000</span>
-<span class="tok-d">      </span><span class="tok-p">teams</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">engineering</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">20</span>
-<span class="tok-d">          </span><span class="tok-p">tpm</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">600000</span>
-<span class="tok-d">        </span><span class="tok-p">sre</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-p">concurrency</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">4</span>
-<span class="tok-d">    </span><span class="tok-p">policies</span><span class="tok-o">:</span>
-<span class="tok-d">      </span><span class="tok-p">approve</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">capabilities</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[prod_deploy]</span><span class="tok-d">   </span><span class="tok-c"># require human approval</span>
-<span class="tok-d">        </span><span class="tok-p">tools</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[deploy.prod]</span>
-<span class="tok-d">      </span><span class="tok-p">allow</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code-review</span>
-<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">code_review</span>
-<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test-runner</span>
-<span class="tok-d">          </span><span class="tok-p">capability</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">test_run</span>
-<span class="tok-d">      </span><span class="tok-p">deny</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">agent</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy-bot</span>
-<span class="tok-d">          </span><span class="tok-p">tool</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">deploy.prod</span><span class="tok-d">          </span><span class="tok-c"># blocked unless approved</span>
-<span class="tok-d">      </span><span class="tok-p">data_classification</span><span class="tok-o">:</span>
-<span class="tok-d">        </span><span class="tok-p">deny</span><span class="tok-o">:</span>
-<span class="tok-d">          </span><span class="tok-o">-</span><span class="tok-d"> </span><span class="tok-p">team</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">interns</span>
-<span class="tok-d">            </span><span class="tok-p">classifications</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">[confidential, restricted]</span></code></pre>
-    <div class="note">The project file is declarative and idempotent — <code>janus project apply</code> creates missing resources and updates existing ones without deleting anything. Run <code>janus project diff</code> first to preview changes.</div>
-
-    <h3 id="config-dynamic-agent">Adding Agents Dynamically</h3>
-    <p>The project file is not the only entry point — you can add an agent to an existing tenant at any time with <code>janus agent add</code>. It registers the agent, creates its default mailbox, and persists the change back to <code>janus.project.yaml</code>:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">add</span><span class="tok-d"> </span><span class="tok-d">summarizer</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--team</span><span class="tok-d"> </span><span class="tok-d">engineering</span><span class="tok-d"> </span><span class="tok-n">--capability</span><span class="tok-d"> </span><span class="tok-d">summarize</span>
-<span class="tok-c"># → Agent summarizer added to tenant acme and saved to janus.project.yaml</span></code></pre>
-    <p>Repeat <code>--capability</code> to grant multiple capabilities, use <code>--classification</code> to restrict data classifications per capability, and omit <code>--mailbox</code> to auto-create the <code>&lt;agent-id&gt;.default</code> mailbox:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">add</span><span class="tok-d"> </span><span class="tok-d">indexer</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--endpoint</span><span class="tok-d"> </span><span class="tok-d">https://idx.internal.acme.com</span><span class="tok-d"> </span><span class="tok-n">--capability</span><span class="tok-d"> </span><span class="tok-d">index</span><span class="tok-d"> </span><span class="tok-n">--capability</span><span class="tok-d"> </span><span class="tok-d">search</span><span class="tok-d"> </span><span class="tok-n">--concurrency</span><span class="tok-d"> </span><span class="tok-n">4</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">status</span><span class="tok-d"> </span><span class="tok-d">indexer</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">heartbeat</span><span class="tok-d"> </span><span class="tok-d">indexer</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
-    <p>For a one-off runtime registration that is not written to the project file, use <code>janus agent register</code>. <code>--protocol</code> accepts <code>a2a</code>, <code>acp</code>, or <code>custom-sdk</code> (default <code>a2a</code>):</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-d"> </span><span class="tok-d">register</span><span class="tok-d"> </span><span class="tok-n">--id</span><span class="tok-d"> </span><span class="tok-d">adhoc-worker</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-s">&quot;Adhoc Worker&quot;</span><span class="tok-d"> </span><span class="tok-n">--protocol</span><span class="tok-d"> </span><span class="tok-d">custom-sdk</span></code></pre>
-
-
-    <h3 id="config-auth">Authentication</h3>
-    <p>Every API call to Janus is authenticated with a <strong>tenant-scoped API key</strong> (enabled by default). Optionally, <strong>mTLS</strong> can be layered on for stricter machine-to-machine deployments.</p>
-
-    <h4>Installing the CLI</h4>
-    <p>The <code>janus</code> CLI ships with the repo and is also published on the releases page. Build it once (requires Go 1.25+):</p>
-    <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">./cli/janus@latest</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">version</span></code></pre>
-    <p>Or download a prebuilt binary from the <a href="https://github.com/agentium-lab/Janus/releases" target="_blank" rel="noopener">releases page</a> and put it on your PATH.</p>
-
-    <h4>API Keys</h4>
-    <p>With <code>auth.enabled</code> on (the default), every request must present a valid key via the <code>X-API-Key</code> or <code>Authorization: Bearer &lt;key&gt;</code> header. Keys are bound to one tenant — a key issued for tenant A cannot reach tenant B (the server rejects the call with <code>403</code>).</p>
-    <p>Create a key with the CLI. The raw key — <code>janus_&lt;64 hex chars&gt;</code> — is returned <strong>only once</strong>, so store it immediately:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
-<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  (store the key — shown only once)</span></code></pre>
-    <p>The server keeps only a SHA-256 hash of the key plus its 8-character prefix for lookup, so the raw key can never be recovered. List and revoke keys the same way:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
-    <p>Point the CLI or SDK at a key with <code>--api-key</code> or the <code>JANUS_API_KEY</code> environment variable, and pass it on plain HTTP calls as a header:</p>
-    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-d">janus_a1b2c3d4e5…</span>
-<span class="tok-d">curl</span><span class="tok-d"> </span><span class="tok-n">-H</span><span class="tok-d"> </span><span class="tok-s">&quot;Authorization: Bearer $JANUS_API_KEY&quot;</span><span class="tok-d"> </span><span class="tok-d">http</span><span class="tok-o">:</span><span class="tok-o">/</span><span class="tok-o">/</span><span class="tok-d">localhost</span><span class="tok-o">:</span><span class="tok-n">8080</span><span class="tok-o">/</span><span class="tok-d">v1</span><span class="tok-o">/</span><span class="tok-d">tenants</span><span class="tok-o">/</span><span class="tok-d">acme</span><span class="tok-o">/</span><span class="tok-d">tasks</span></code></pre>
-
-    <h4>mTLS (optional)</h4>
-    <p>For stricter machine-to-machine security, enable TLS and require client certificates. When <code>client_ca_file</code> is set, Janus verifies client certificates (mutual TLS, minimum TLS 1.2):</p>
-    <pre><code><span class="tok-c"># configs/janus.local.yaml</span>
-<span class="tok-p">auth</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
-
-<span class="tok-p">tls</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">true</span>
-<span class="tok-d">  </span><span class="tok-p">cert_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.crt</span>
-<span class="tok-d">  </span><span class="tok-p">key_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/server.key</span>
-<span class="tok-d">  </span><span class="tok-p">client_ca_file</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">/etc/janus/ca.crt</span><span class="tok-c">   # set to require client certificates (mTLS)</span></code></pre>
-    <p>Or with environment variables (all <code>JANUS_</code>-prefixed):</p>
-    <pre><code><span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_AUTH_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CERT_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.crt</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_KEY_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/server.key</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_TLS_CLIENT_CA_FILE</span><span class="tok-o">=</span><span class="tok-d">/etc/janus/ca.crt</span></code></pre>
-    <p>Keep <code>auth.enabled</code> on in production — when disabled, every API endpoint is unauthenticated.</p>
-
-    <h4>LLM for Intent Routing (optional)</h4>
-    <p>To enable <code>target_type: "intent"</code> (natural language → capability routing), configure an OpenAI-compatible LLM:</p>
-    <pre><code><span class="tok-c"># Environment variables</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_ENABLED</span><span class="tok-o">=</span><span class="tok-n">true</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_API_KEY</span><span class="tok-o">=</span><span class="tok-d">sk-xxx</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_MODEL</span><span class="tok-o">=</span><span class="tok-d">gpt-4o-mini</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_LLM_BASE_URL</span><span class="tok-o">=</span><span class="tok-d">https://api.openai.com/v1</span>  <span class="tok-c"># or Ollama/vLLM/Azure</span></code></pre>
-    <p>When LLM is not configured, <code>target_type: "intent"</code> falls back to keyword matching (no external dependency). When configured, Janus maps natural language to the best matching capability via the LLM, validates the result against the online agent catalog, then routes deterministically.</p>
-
+    
     <h2 id="install-sdk">5. Install the Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-broker</span></code></pre>
 
+    
     <h2 id="publish-task">6. Publish a Task</h2>
     <p>Create a file <code>publish.py</code>:</p>
     <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">os</span>
@@ -570,6 +206,7 @@
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"deploy"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
 <span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
 
+    
     <h2 id="pull-task">7. Pull and Complete the Task</h2>
     <p>Create a file <code>worker.py</code>:</p>
     <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">os</span>
@@ -613,6 +250,7 @@
 <span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-f">print</span><span class="tok-d">(</span><span class="tok-d">evt</span><span class="tok-d">[</span><span class="tok-s">"event_type"</span><span class="tok-d">]</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">evt</span><span class="tok-d">.</span><span class="tok-f">get</span><span class="tok-d">(</span><span class="tok-s">"payload"</span><span class="tok-d">)</span><span class="tok-d">)</span>
 <span class="tok-c"># → task.progress {"percent": 20, "message": "Analyzing code..."}</span>
 <span class="tok-c"># → task.completed {...}</span></code></pre>
+    
     <h2 id="verify-cli">8. Verify via CLI</h2>
     <p>Use the Janus CLI to check task state:</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
@@ -629,307 +267,7 @@
         <li><strong>Capability/group routing finds no agent</strong> — routing only considers <em>registered, online</em> agents; call <code>register_agent</code> (with the capability) and heartbeat before publishing.</li>
     </ul>
 
-    <h2 id="cli-reference">CLI Reference</h2>
-    <p>The <code>janus</code> CLI is the primary tool for managing agents, tasks, mailboxes, API keys, policies, and project configuration. It talks to the Janus API server over HTTP — point it at your server with <code>--server</code>.</p>
-
-    <h3 id="cli-global-flags">Global Flags</h3>
-    <p>Every command accepts these persistent flags. Set them once via environment variables to avoid repetition:</p>
-    <table>
-        <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
-        <tr><td><code>--server</code></td><td><code>http://localhost:8080</code></td><td>Janus API server URL.</td></tr>
-        <tr><td><code>--tenant</code></td><td><code>default</code></td><td>Tenant ID to operate on.</td></tr>
-        <tr><td><code>--api-key</code></td><td><code>$JANUS_API_KEY</code></td><td>API key for authentication. Falls back to the environment variable.</td></tr>
-        <tr><td><code>--file</code></td><td>—</td><td>Path to a project config file. Overrides <code>$JANUS_PROJECT_FILE</code> and the default <code>janus.project.yaml</code>.</td></tr>
-    </table>
-    <pre><code><span class="tok-c"># One-time setup for your shell session</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">=</span><span class="tok-s">"jak_..."</span>
-<span class="tok-f">export</span><span class="tok-d"> </span><span class="tok-d">JANUS_PROJECT_FILE</span><span class="tok-o">=</span><span class="tok-d">configs</span><span class="tok-o">/</span><span class="tok-d">janus</span><span class="tok-o">.</span><span class="tok-d">project</span><span class="tok-o">.</span><span class="tok-d">yaml</span>
-
-<span class="tok-c"># Now every janus command picks these up automatically</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
-
-    <h3 id="cli-command-tree">Command Groups</h3>
-    <table>
-        <tr><th>Command</th><th>Subcommands</th><th>Purpose</th></tr>
-        <tr><td><code>project</code></td><td><code>init</code>, <code>validate</code>, <code>diff</code>, <code>apply</code>, <code>sync</code></td><td>Declarative tenant topology management.</td></tr>
-        <tr><td><code>tenant</code></td><td><code>add</code></td><td>Create a tenant and persist it to the project file.</td></tr>
-        <tr><td><code>agent</code></td><td><code>register</code>, <code>add</code>, <code>status</code>, <code>heartbeat</code></td><td>Register agents and check liveness.</td></tr>
-        <tr><td><code>task</code></td><td><code>publish</code>, <code>status</code>, <code>cancel</code>, <code>replay</code>, <code>events</code></td><td>Publish and inspect tasks.</td></tr>
-        <tr><td><code>mailbox</code></td><td><code>create</code>, <code>status</code>, <code>pause</code>, <code>resume</code>, <code>pull</code>, <code>ack</code>, <code>nack</code></td><td>Manage mailboxes and process tasks.</td></tr>
-        <tr><td><code>api-key</code></td><td><code>create</code>, <code>list</code>, <code>revoke</code></td><td>Tenant-scoped API key lifecycle.</td></tr>
-        <tr><td><code>policy</code></td><td><code>allow-agent</code>, <code>deny-agent</code>, <code>allow-team</code>, <code>deny-team</code>, <code>require-approval</code>, <code>allow-classification</code>, <code>deny-classification</code>, <code>allow-tool</code>, <code>deny-tool</code></td><td>Generate governance policy rules from templates.</td></tr>
-        <tr><td><code>dlq</code></td><td><code>query</code>, <code>replay</code>, <code>discard</code></td><td>Dead letter queue inspection and recovery.</td></tr>
-        <tr><td><code>dashboard</code></td><td>—</td><td>Interactive TUI for monitoring tasks, mailboxes, and agents.</td></tr>
-    </table>
-
-    <h3 id="cli-project">Project Workflow</h3>
-    <p>The project commands manage your tenant topology as code (covered in <a href="#configure">Configure</a>):</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">init</span><span class="tok-d">                    </span><span class="tok-c"># generate janus.project.yaml</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">validate</span><span class="tok-d">                </span><span class="tok-c"># check the file for errors</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">diff</span><span class="tok-d">                     </span><span class="tok-c"># preview changes vs the live API</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">apply</span><span class="tok-d"> </span><span class="tok-n">--all-tenants</span><span class="tok-d">      </span><span class="tok-c"># apply every tenant</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">project</span><span class="tok-d"> </span><span class="tok-d">sync</span><span class="tok-d"> </span><span class="tok-n">--overwrite</span><span class="tok-d">          </span><span class="tok-c"># pull live resources back into the file</span></code></pre>
-
-    <h3 id="cli-api-keys">API Keys</h3>
-    <p>API keys are tenant-scoped. Create one per environment or service and revoke them when rotated. The raw key is shown only once:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">create</span><span class="tok-d"> </span><span class="tok-n">--name</span><span class="tok-d"> </span><span class="tok-d">ci-bot</span>
-<span class="tok-c"># → {"tenant_id":"acme","name":"ci-bot","prefix":"janus_a1","key":"janus_a1b2c3...","created_at":"..."}  (store the key — shown only once)</span>
-
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">list</span>
-
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-d">api-key</span><span class="tok-d"> </span><span class="tok-d">revoke</span><span class="tok-d"> </span><span class="tok-d">&lt;key-id&gt;</span></code></pre>
-
-    <h3 id="cli-tasks-mailboxes">Tasks &amp; Mailboxes</h3>
-    <p>Publish, pull, and acknowledge tasks — the same lifecycle the SDK wraps, but from the shell:</p>
-    <pre><code><span class="tok-c"># Publish a task to a mailbox</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">publish</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span><span class="tok-d"> </span><span class="tok-n">--source</span><span class="tok-d"> </span><span class="tok-d">product</span><span class="tok-d"> </span><span class="tok-n">--mailbox</span><span class="tok-d"> </span><span class="tok-d">review-mb</span>
-
-<span class="tok-c"># Check task status</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">status</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-
-<span class="tok-c"># Pull the next task from a mailbox</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">mailbox</span><span class="tok-d"> </span><span class="tok-d">pull</span><span class="tok-d"> </span><span class="tok-d">review-mb</span><span class="tok-d"> </span><span class="tok-n">--agent</span><span class="tok-d"> </span><span class="tok-d">reviewer</span>
-
-<span class="tok-c"># Inspect the dead letter queue and replay</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">query</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
-<span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dlq</span><span class="tok-d"> </span><span class="tok-d">replay</span><span class="tok-d"> </span><span class="tok-d">task-001</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
-
-    <h3 id="cli-dashboard">Dashboard</h3>
-    <p>Launch an interactive terminal dashboard to monitor tasks, mailboxes, and agent health in real time:</p>
-    <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">dashboard</span><span class="tok-d"> </span><span class="tok-n">--server</span><span class="tok-d"> </span><span class="tok-d">http://localhost:8080</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span></code></pre>
-
-    <h2 id="production">Production Deployment</h2>
-    <p>For Kubernetes, Janus ships a Helm chart with liveness/readiness probes, a migration Job hook, HPA, PDB, and Prometheus scrape annotations:</p>
-    <pre><code><span class="tok-d">helm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d"> </span><span class="tok-d">deployments</span><span class="tok-o">/</span><span class="tok-d">helm</span><span class="tok-o">/</span><span class="tok-d">janus-core</span><span class="tok-o">/</span></code></pre>
-    <p>See the <a href="https://github.com/agentium-lab/Janus">GitHub repo</a> for the full chart values and the ops runbook.</p>
-
-    <h2 id="distributed">Distributed Deployment</h2>
-    <p>Janus Core is a stateless compute node — all persistent state is externalized to PostgreSQL, NATS JetStream, and Redis. You can run multiple replicas horizontally; any replica can serve any request, a single replica crash loses no business state, and traffic is balanced behind a front load balancer.</p>
-
-    <figure class="arch-diagram">
-        <div class="arch-layer">
-            <div class="arch-box arch-box-entry">Load Balancer / Ingress</div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer">
-            <div class="arch-box arch-box-core">
-                Janus Core (stateless)
-                <div class="arch-replicas">
-                    <span class="arch-pill">#1</span>
-                    <span class="arch-pill">#2</span>
-                    <span class="arch-pill">…</span>
-                    <span class="arch-pill">#N</span>
-                </div>
-                <div class="arch-tag">HPA · 2–10 replicas</div>
-            </div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer">
-            <div class="arch-box arch-box-state">PostgreSQL<small>persistent state</small></div>
-            <div class="arch-box arch-box-state">NATS JetStream<small>events / messaging</small></div>
-            <div class="arch-box arch-box-state">Redis<small>rate limit / cache</small></div>
-        </div>
-        <figcaption class="arch-caption">The compute tier scales horizontally; all state is externalized to PG / NATS / Redis.</figcaption>
-    </figure>
-
-    <p>When multiple replicas consume outbox events concurrently, a database-level lease provides mutual exclusion so events are neither double-delivered nor lost. Migration <code>000011_outbox_worker_lease</code> adds lease columns to <code>outbox_events</code>, and <code>000012_outbox_dedupe_key</code> adds an idempotency key:</p>
-    <pre><code>locked_by        text         -- worker that claimed the row
-locked_at        timestamptz
-lease_expires_at timestamptz  -- reclaimable by another worker after expiry
-dedupe_key       text         -- unique (tenant_id, dedupe_key) prevents double delivery</code></pre>
-    <p>If a replica crashes, its locked rows are reclaimed by a live replica once the lease expires; <code>dedupe_key</code> guarantees retries and concurrent schedulers never insert the same delivery twice.</p>
-
-    <h3 id="distributed-scaling">Scaling the Compute Tier</h3>
-    <p>The Helm chart enables the HorizontalPodAutoscaler by default, auto-scaling on CPU and memory:</p>
-    <pre><code><span class="tok-p">autoscaling</span><span class="tok-o">:</span>
-<span class="tok-d">  </span><span class="tok-p">enabled</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-d">true</span>
-<span class="tok-d">  </span><span class="tok-p">minReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">2</span>
-<span class="tok-d">  </span><span class="tok-p">maxReplicas</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">10</span>
-<span class="tok-d">  </span><span class="tok-p">targetCPUUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">70</span>
-<span class="tok-d">  </span><span class="tok-p">targetMemoryUtilizationPercentage</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-n">80</span></code></pre>
-    <p>A PodDisruptionBudget (<code>minAvailable: 1</code>) keeps at least one replica available during rollouts and node maintenance.</p>
-
-    <h3 id="distributed-state">Scaling the State Tier</h3>
-    <p>As the compute tier scales horizontally, each state store scales its own way:</p>
-    <ul>
-        <li><strong>PostgreSQL</strong> — a single primary handles Janus's workload; add PgBouncer for higher throughput, and read replicas for read-heavy access patterns.</li>
-        <li><strong>NATS JetStream</strong> — natively supports clustering with RAFT consensus; scale JetStream nodes horizontally for more messaging throughput and fault tolerance.</li>
-        <li><strong>Redis</strong> — a single instance is usually enough; use Redis Cluster or Sentinel when you need higher availability.</li>
-    </ul>
-    <div class="note">Janus Core runs with a <code>readOnlyRootFilesystem</code>; the only persistent volume is for artifact storage (<code>artifacts</code>) — it holds no runtime state, so replicas are stateless and replaceable at any time.</div>
-
-    <h2 id="example-smart-service">Complete Example: Smart Customer Service Center</h2>
-    <p class="section-sub"><strong>Pattern walkthrough</strong> — snippets illustrate the flow; each assumes the <code>JanusClient</code> from the steps above (with <code>from janus_broker import AckRequest</code>) and agents/m mailboxes registered as shown. In production, wrap pulls in a <code>JanusWorker</code> loop.</p>
-    <p>This section walks through a real-world multi-agent scenario — <strong>handling a customer complaint about a wrong item delivery</strong> — to show how Janus's routing, durability, and governance features work together in a production-like workflow.</p>
-
-    <h3>What You'll Learn</h3>
-    <ul>
-        <li>Using <code>target_type: intent</code> with LLM-powered natural language routing</li>
-        <li>Capability-based routing (<code>target_type: capability</code>)</li>
-        <li>Team-based routing (<code>target_type: group</code>)</li>
-        <li>Task lease expiry and automatic recovery when an agent crashes</li>
-        <li>Parallel task fan-out and barrier-style synchronization</li>
-        <li>Data passing between agents (Agent A's output becomes Agent B's input)</li>
-    </ul>
-
-    <h3>The Scenario</h3>
-    <p>A customer reports: <em>"I ordered a red phone but received a blue one. I need an exchange."</em></p>
-    <p>Janus coordinates <strong>four agents</strong> to resolve this:</p>
-    <ol>
-        <li><strong>Logistics Bot</strong> — investigates the original order (capability: <code>wrong_item_investigate</code>, team: <code>logistics</code>)</li>
-        <li><strong>Shipping Bot</strong> — ships the correct red phone (capability: <code>reship</code>, team: <code>warehouse</code>)</li>
-        <li><strong>Return Bot</strong> — arranges pickup of the wrong blue phone (capability: <code>retrieve_wrong</code>, team: <code>warehouse</code>)</li>
-        <li><strong>Notify Bot</strong> — sends status updates to the customer (capability: <code>notify</code>, team: <code>support</code>)</li>
-    </ol>
-
-    <h3>The Flow (With Failure Injection)</h3>
-    <pre>
-Customer: "I ordered red, got blue"
-    │
-    ▼  intent LLM → "wrong_item_investigate"
-    │
-Logistics-bot ─── pulls order ─── 💀 crashes (no ACK) ─── lease expires ─── recovers ─── ACKs
-    │
-    │  data: {order: "ORD-789", ordered: "red", shipped: "blue"}
-    ▼
-    ├── ► Shipping-bot ─── ships correct red ─── ACK {tracking: "SF789"}
-    ├── ► Return-bot   ─── picks up wrong blue ─── ACK {pickup: "PU123"}
-    └── ► Notify-bot   ─── "exchange started" ─── ACK
-            │
-            ▼
-         Notify-bot ─── "red shipped SF789, blue pickup PU123" ─── ACK</pre>
-
-    <p><strong>Key design:</strong> The logistics-bot's investigation result (<em>which item is correct, which is wrong</em>) drives the downstream agents — the shipping-bot reads the investigation data to know <em>what</em> to ship; the return-bot reads it to know <em>what</em> to retrieve. Agents don't just acknowledge tasks — they <strong>produce data that other agents consume</strong>.</p>
-
-    <h3>Step 1: Register Agents and Their Capabilities</h3>
-    <p>Each agent declares what it can do (<code>capability</code>) and which team it belongs to (<code>team</code>). Janus uses capabilities for matching and teams for group routing.</p>
-    <pre><code><span class="tok-c"># Register the four agents</span>
-<span class="tok-k">for</span><span class="tok-d"> </span><span class="tok-t">agent</span><span class="tok-d"> </span><span class="tok-k">in</span><span class="tok-d"> </span><span class="tok-o">[</span>
-<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Logistics Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"logistics"</span><span class="tok-o">}</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Shipping Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Return Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"warehouse"</span><span class="tok-o">}</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-o">{</span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"display_name"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"Notify Bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"team"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"support"</span><span class="tok-o">}</span>
-<span class="tok-o">]</span><span class="tok-o">:</span>
-<span class="tok-d">    </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_agent</span><span class="tok-o">(</span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"id"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"display_name"</span><span class="tok-o">]</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">agent</span><span class="tok-o">[</span><span class="tok-s">"team"</span><span class="tok-o">]</span><span class="tok-o">)</span></code></pre>
-
-    <p>Then assign capabilities and create mailboxes (task queues) for each agent:</p>
-    <pre><code><span class="tok-c"># Capabilities: what each agent can do</span>
-<span class="tok-d">caps</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-o">{</span>
-<span class="tok-d">  </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"wrong_item_investigate"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">:</span><span class="tok-d">  </span><span class="tok-s">"reship"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"return-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"notify-bot"</span><span class="tok-o">:</span><span class="tok-d">    </span><span class="tok-s">"notify"</span><span class="tok-o">,</span>
-<span class="tok-o">}</span>
-<span class="tok-c"># Create mailboxes (each with a 5-second ACK timeout for logistics)</span>
-<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-d">ack_wait</span><span class="tok-o">=</span><span class="tok-n">5</span><span class="tok-o">)</span>
-<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-o">)</span>
-<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"return-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-o">)</span>
-<span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">create_mailbox</span><span class="tok-o">(</span><span class="tok-s">"notify-mb"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-o">)</span></code></pre>
-
-    <h3>Step 2: Publish with Intent Routing (LLM-Powered)</h3>
-    <p>Instead of specifying a concrete agent or capability, use <code>target_type: intent</code> with natural language. Janus's LLM-powered resolver maps the request to the best matching capability:</p>
-    <pre><code><span class="tok-c"># Customer complaint → LLM resolves to "wrong_item_investigate"</span>
-<span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-o">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-o">.</span><span class="tok-f">publish_task</span><span class="tok-o">(</span><span class="tok-o">{</span>
-<span class="tok-d">  </span><span class="tok-s">"id"</span><span class="tok-o">:</span><span class="tok-d">           </span><span class="tok-s">"task-001"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"source_agent"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"customer"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"target_type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"intent"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"target_value"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"received wrong item, ordered red but got blue, need exchange"</span><span class="tok-o">,</span>
-<span class="tok-d">  </span><span class="tok-s">"envelope"</span><span class="tok-o">:</span><span class="tok-d">     </span><span class="tok-o">{</span><span class="tok-s">"type"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"complaint"</span><span class="tok-o">,</span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-o">{</span><span class="tok-s">"order"</span><span class="tok-o">:</span><span class="tok-d"> </span><span class="tok-s">"ORD-789"</span><span class="tok-o">}</span><span class="tok-o">}</span>
-<span class="tok-o">}</span><span class="tok-o">)</span>
-<span class="tok-c"># Janus automatically resolves:</span>
-<span class="tok-c">#   target_type: "capability"</span>
-<span class="tok-c">#   target_value: "wrong_item_investigate"</span>
-<span class="tok-c">#   → routes to logistics-mb (logistics-bot's mailbox)</span></code></pre>
-
-    <h3>Step 3: Lease Expiry — Testing Durability</h3>
-    <p>Janus guarantees at-least-once delivery. When an agent pulls a task and <strong>crashes without ACKing</strong>, the lease expires and the task automatically returns to the queue:</p>
-    <pre><code><span class="tok-c"># logistics-bot pulls the task...</span>
-<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">)</span>
-
-<span class="tok-c"># Simulate a crash — do NOT ACK, just stop.</span>
-<span class="tok-c"># After the lease expires (5 seconds with our config),</span>
-<span class="tok-c"># Janus automatically re-delivers the task to the mailbox.</span>
-
-<span class="tok-c"># When the agent recovers and pulls again:</span>
-<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"logistics-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">)</span>
-<span class="tok-c"># &lt;- same task! Janus redelivered it after lease expiry.</span>
-
-<span class="tok-c"># Now ACK with the investigation results (data for downstream agents):</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"confirmed": true, "order": "ORD-789", "ordered": "red", "shipped": "blue"}'</span><span class="tok-d">,</span>
-<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
-
-    <h3>Step 4: Fan-Out — Three Parallel Branches</h3>
-    <p>After confirming the wrong item, Janus orchestrates three parallel workflows. Each branch routes differently — <strong>capability routing</strong> for shipping/return, <strong>group routing</strong> for notifications:</p>
-    <pre><code><span class="tok-c"># Branch A: ship the correct item (capability routing)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ship-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reship"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"order\": \"ORD-789\", \"correct\": \"red\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d">}</span><span class="tok-d">)</span>
-<span class="tok-c"># -&gt; Janus finds shipping-bot (capability: reship) and routes to shipping-mb</span>
-
-<span class="tok-c"># Branch B: retrieve the wrong item (capability routing)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"ret-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve_wrong"</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"retrieve"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"order\": \"ORD-789\", \"wrong\": \"blue\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d">}</span><span class="tok-d">)</span>
-
-<span class="tok-c"># Branch C: notify the customer (capability routing to the support team)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-001"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"logistics-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"message\": \"exchange started\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
-
-    <h3>Step 5: Each Agent Processes Its Branch</h3>
-    <p>Each agent independently pulls, processes, and ACKs its task, producing result data that flows to downstream agents:</p>
-    <pre><code><span class="tok-c"># shipping-bot: pull -&gt; process -&gt; ACK with the tracking number</span>
-<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"shipping-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"tracking": "SF789", "reshipped": true}'</span><span class="tok-d">,</span>
-<span class="tok-d">)</span><span class="tok-d">)</span>
-
-<span class="tok-c"># return-bot: pull -&gt; process -&gt; ACK with pickup info</span>
-<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"return-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"return-bot"</span><span class="tok-d">)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"return-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">result_ref</span><span class="tok-d">=</span><span class="tok-s">'{"pickup": "PU123", "scheduled": true}'</span><span class="tok-d">,</span>
-<span class="tok-d">)</span><span class="tok-d">)</span>
-
-<span class="tok-c"># notify-bot: pull -&gt; ACK (initial notification)</span>
-<span class="tok-d">result</span><span class="tok-d"> </span><span class="tok-d">=</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">pull_task</span><span class="tok-d">(</span><span class="tok-s">"notify-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"notify-bot"</span><span class="tok-d">)</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">ack_task</span><span class="tok-d">(</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">task</span><span class="tok-d">.</span><span class="tok-d">id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-f">AckRequest</span><span class="tok-d">(</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d">lease_id</span><span class="tok-d">=</span><span class="tok-d">result</span><span class="tok-d">.</span><span class="tok-d">lease</span><span class="tok-d">.</span><span class="tok-d">lease_id</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"notify-bot"</span><span class="tok-d">,</span>
-<span class="tok-d">)</span><span class="tok-d">)</span></code></pre>
-
-    <h3>Step 6: Data Fan-In — Combine Results</h3>
-    <p>After both shipping and return complete, publish a final notification with <strong>both results combined</strong> — demonstrating how agents pass data through the system:</p>
-    <pre><code><span class="tok-c"># Pattern illustration: the branch results above arrive as ACKed</span>
-<span class="tok-c"># result_refs on their own tasks; in a real app, read them via</span>
-<span class="tok-c"># get_task_events("ship-001") / get_task_events("ret-001") (or your own</span>
-<span class="tok-c"># result store) and combine. Here we inline the values for brevity:</span>
-<span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">publish_task</span><span class="tok-d">(</span><span class="tok-d">{</span><span class="tok-s">"id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target_type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"target_value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"envelope"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"task_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify-final"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"tenant_id"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"acme"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"source_agent"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"shipping-bot"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"target"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"capability"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-s">"value"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"payload"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-s">"type"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"notify"</span><span class="tok-d">,</span>
-<span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-d"> </span><span class="tok-s">"content"</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"{\"shipping\": {\"tracking\": \"SF789\"}, \"return\": {\"pickup\": \"PU123\"}, \"message\": \"Red phone shipped (SF789), blue phone pickup (PU123)\"}"</span><span class="tok-d">}</span><span class="tok-d">}</span><span class="tok-d">,</span>
-<span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
-
-    <div class="note"><strong>What this example demonstrates:</strong> This is a complete production-like workflow covering intent routing (LLM-powered NL → capability), capability routing (find the right agent by what it can do), multiple routing types in one pipeline, lease expiry recovery (crash simulation), parallel branches, and data passing between agents. The same patterns apply to customer support, order fulfillment, claims processing, and any multi-agent workflow where agents need to collaborate and pass data.</div>
-
+    
     <h2 id="whats-next">What's Next</h2>
     <ul>
         <li><a href="/docs/concepts.html">Read Core Concepts</a> — understand mailboxes, tasks, leases, and envelopes</li>
@@ -953,6 +291,8 @@ Logistics-bot ─── pulls order ─── 💀 crashes (no ACK) ─── le
                 <div class="footer-col">
                     <h4>Docs</h4>
                     <a href="/docs/quickstart.html">Quick Start</a>
+                    <a href="/docs/configuration.html">Configuration</a>
+                    <a href="/docs/deployment.html">Deployment</a>
                     <a href="/docs/concepts.html">Concepts</a>
                     <a href="/docs/sdk.html">SDK Guide</a>
                     <a href="/docs/api.html">API Reference</a>
