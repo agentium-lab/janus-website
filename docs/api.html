@@ -173,7 +173,7 @@ Response <code>201</code>: the full task object (<code>id</code>, <code>status</
         <tr><td>403</td><td>TENANT_MISMATCH</td><td>Cross-tenant access denied</td></tr>
         <tr><td>403</td><td>POLICY_DENIED</td><td>Governance policy blocked the operation</td></tr>
         <tr><td>404</td><td>NOT_FOUND</td><td>Resource not found</td></tr>
-        <tr><td>409</td><td>LEASE_EXPIRED</td><td>Task lease expired, re-pull required</td></tr>
+        <tr><td>400</td><td>INVALID_ARGUMENT</td><td>Lease mismatch or expired lease (start/ACK/heartbeat against a lease the server no longer holds) — re-pull the task; delivery is at-least-once so the same work may arrive twice</td></tr>
         <tr><td>429</td><td>RATE_LIMITED</td><td>Budget or concurrency limit exceeded</td></tr>
         <tr><td>500</td><td>INTERNAL</td><td>Server error</td></tr>
     </table>

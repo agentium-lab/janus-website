@@ -97,9 +97,20 @@
     <h2>Python SDK</h2>
     <div class="sdk-tab">
         <p><strong>安装</strong></p>
-        <pre><code><span class="tok-d">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium</span><span class="tok-d">-</span><span class="tok-d">lab</span><span class="tok-d">/</span><span class="tok-d">janus</span><span class="tok-d">-</span><span class="tok-d">sdk</span></code></pre>
+        <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus</span><span class="tok-d">-</span><span class="tok-d">broker</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
+        <pre><code><span class="tok-k">import</span> <span class="tok-t">os</span>
+
+<span class="tok-k">from</span> <span class="tok-t">janus_broker</span> <span class="tok-k">import</span> <span class="tok-t">CreateMailboxRequest</span><span class="tok-p">,</span> <span class="tok-t">JanusClient</span><span class="tok-p">,</span> <span class="tok-t">PublishTaskRequest</span>
+
+<span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-f">JanusClient</span><span class="tok-o">(</span>
+    <span class="tok-s">"http://localhost:8080"</span><span class="tok-p">,</span>
+    <span class="tok-p">tenant_id</span><span class="tok-o">=</span><span class="tok-s">"acme"</span><span class="tok-p">,</span>
+    <span class="tok-p">api_key</span><span class="tok-o">=</span><span class="tok-d">os</span><span class="tok-o">.</span><span class="tok-d">environ</span><span class="tok-o">[</span><span class="tok-s">"JANUS_API_KEY"</span><span class="tok-o">]</span><span class="tok-p">,</span>
+<span class="tok-o">)</span></code></pre>
+
+        <p><strong>使用</strong></p>
         <pre><code><span class="tok-c"># 创建邮箱（请求模型；也接受普通 dict）</span>
 <span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">create_mailbox</span><span class="tok-d">(</span><span class="tok-f">CreateMailboxRequest</span><span class="tok-d">(</span><span class="tok-d">id</span><span class="tok-d">=</span><span class="tok-s">"review-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">agent_id</span><span class="tok-d">=</span><span class="tok-s">"reviewer"</span><span class="tok-d">)</span><span class="tok-d">)</span>
 
@@ -118,6 +129,15 @@
         <pre><code><span class="tok-f">npm</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">@</span><span class="tok-d">agentium-lab</span><span class="tok-o">/</span><span class="tok-d">janus-sdk</span></code></pre>
 
         <p><strong>创建客户端</strong></p>
+        <pre><code><span class="tok-k">import</span> <span class="tok-t">Client</span> <span class="tok-k">from</span> <span class="tok-s">"@agentium-lab/janus-sdk"</span><span class="tok-p">;</span>
+
+<span class="tok-k">const</span> <span class="tok-d">client</span> <span class="tok-o">=</span> <span class="tok-k">new</span> <span class="tok-f">Client</span><span class="tok-o">(</span><span class="tok-o">{</span>
+    <span class="tok-d">baseURL</span><span class="tok-o">:</span> <span class="tok-s">"http://localhost:8080"</span><span class="tok-p">,</span>
+    <span class="tok-d">tenantID</span><span class="tok-o">:</span> <span class="tok-s">"acme"</span><span class="tok-p">,</span>
+    <span class="tok-d">apiKey</span><span class="tok-o">:</span> <span class="tok-d">process</span><span class="tok-o">.</span><span class="tok-d">env</span><span class="tok-o">.</span><span class="tok-d">JANUS_API_KEY</span><span class="tok-o">!</span><span class="tok-p">,</span>
+<span class="tok-o">}</span><span class="tok-o">)</span><span class="tok-p">;</span></code></pre>
+
+        <p><strong>使用</strong></p>
         <pre><code><span class="tok-c">// 创建邮箱</span>
 <span class="tok-k">await</span><span class="tok-d"> </span><span class="tok-d">client</span><span class="tok-d">.</span><span class="tok-f">createMailbox</span><span class="tok-d">(</span><span class="tok-s">"review-mb"</span><span class="tok-d">,</span><span class="tok-d"> </span><span class="tok-d">{</span><span class="tok-d"> </span><span class="tok-d">agentId</span><span class="tok-d">:</span><span class="tok-d"> </span><span class="tok-s">"reviewer"</span><span class="tok-d"> </span><span class="tok-d">}</span><span class="tok-d">)</span><span class="tok-d">;</span>
 

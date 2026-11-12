@@ -45,7 +45,7 @@
     <div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
     <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
     <span class="eyebrow">Documentation</span>
-    <h1>Quick Start</h1>
+    <h1>Configuration &amp; Auth</h1>
     <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
 </div>
 <div class="doc-layout">
@@ -372,9 +372,9 @@
 
     <h4>Installing the CLI</h4>
     <p>The <code>janus</code> CLI ships with the repo and is also published on the releases page. Build it once (requires Go 1.25+):</p>
-    <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">./cli/janus@latest</span>
+    <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">./cli</span><span class="tok-d"> </span><span class="tok-c"># from the repo root; binary lands in $(go env GOPATH)/bin</span>
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">version</span></code></pre>
-    <p>Or download a prebuilt binary from the <a href="https://github.com/agentium-lab/Janus/releases" target="_blank" rel="noopener">releases page</a> and put it on your PATH.</p>
+    <p>Or download a prebuilt binary from the <a href="https://github.com/agentium-lab/Janus/releases" target="_blank" rel="noopener">releases page</a> and put it on your PATH.<br>Or install remotely once the module is published: <code>go install github.com/agentium-lab/Janus/cli@v1.11.0</code>.</p>
 
     <h4>API Keys</h4>
     <p>With <code>auth.enabled</code> on (the default), every request must present a valid key via the <code>X-API-Key</code> or <code>Authorization: Bearer &lt;key&gt;</code> header. Keys are bound to one tenant — a key issued for tenant A cannot reach tenant B (the server rejects the call with <code>403</code>).</p>

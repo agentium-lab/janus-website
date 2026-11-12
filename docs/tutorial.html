@@ -45,7 +45,7 @@
     <div class="breadcrumb"><a href="/">Home</a><span>›</span>Quick Start</div>
     <p style="text-align:center;margin:0 0 28px;"><img src="/assets/janus-logo-dark.svg" alt="Janus" height="140" style="height:140px;"></p>
     <span class="eyebrow">Documentation</span>
-    <h1>Quick Start</h1>
+    <h1>Tutorial: Smart Customer Service</h1>
     <p>Install, configure, and run Janus, then complete your first agent-to-agent task handoff.</p>
 </div>
 <div class="doc-layout">
@@ -58,7 +58,7 @@
 <div class="doc-content-col">
         <div class="doc-content">
 <h2 id="example-smart-service">Complete Example: Smart Customer Service Center</h2>
-    <p class="section-sub"><strong>Pattern walkthrough</strong> — snippets illustrate the flow; each assumes the <code>JanusClient</code> from the steps above (with <code>from janus_broker import AckRequest</code>) and agents/m mailboxes registered as shown. In production, wrap pulls in a <code>JanusWorker</code> loop.</p>
+    <p class="section-sub"><strong>Pattern walkthrough</strong> — snippets illustrate the flow. Prerequisites (set up once in the <a href="/docs/quickstart.html">Quick Start</a>): export <code>JANUS_API_KEY</code>; create the client — <code>from janus_broker import AckRequest, JanusClient</code> then <code>client = JanusClient("http://localhost:8080", tenant_id="acme", api_key=os.environ["JANUS_API_KEY"])</code> — and register the agents/mailboxes shown (reviewer/logistics-bot/shipping-bot/return-bot/notify-bot with their <code>review-mb</code>/<code>logistics-mb</code>/<code>shipping-mb</code>/<code>return-mb</code>/<code>notify-mb</code> mailboxes and capabilities). In production, wrap pulls in a <code>JanusWorker</code> loop.</p>
     <p>This section walks through a real-world multi-agent scenario — <strong>handling a customer complaint about a wrong item delivery</strong> — to show how Janus's routing, durability, and governance features work together in a production-like workflow.</p>
 
     <h3>What You'll Learn</h3>

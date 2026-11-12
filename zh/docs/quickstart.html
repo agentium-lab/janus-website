@@ -114,11 +114,11 @@
     </ul>
 
     
-    <h2 id="install-sdk">5. 安装 Python SDK</h2>
+    <h2 id="install-sdk">3. 安装 Python SDK</h2>
     <pre><code><span class="tok-f">pip</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">janus-broker</span></code></pre>
 
     
-    <h2 id="publish-task">6. 发布一个任务</h2>
+    <h2 id="publish-task">4. 发布一个任务</h2>
     <p>创建文件 <code>publish.py</code>：</p>
     <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">os</span>
 
@@ -208,7 +208,7 @@
 <span class="tok-d">}</span><span class="tok-d">)</span></code></pre>
 
     
-    <h2 id="pull-task">7. 拉取并完成任务</h2>
+    <h2 id="pull-task">5. 拉取并完成任务</h2>
     <p>创建文件 <code>worker.py</code>：</p>
     <pre><code><span class="tok-k">import</span><span class="tok-d"> </span><span class="tok-d">os</span>
 
@@ -252,7 +252,7 @@
 <span class="tok-c"># → task.progress {"percent": 20, "message": "Analyzing code..."}</span>
 <span class="tok-c"># → task.completed {...}</span></code></pre>
     
-    <h2 id="verify-cli">8. 用 CLI 验证</h2>
+    <h2 id="verify-cli">6. 用 CLI 验证</h2>
     <p>使用 Janus CLI 查看任务状态：</p>
     <pre><code><span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">task</span><span class="tok-d"> </span><span class="tok-d">list</span><span class="tok-d"> </span><span class="tok-n">--tenant</span><span class="tok-d"> </span><span class="tok-d">acme</span>
 <span class="tok-c"># → task-001  completed  2026-07-31T12:00:00Z</span>

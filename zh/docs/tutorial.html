@@ -59,7 +59,7 @@
 <div class="doc-content-col">
         <div class="doc-content">
 <h2 id="example-smart-service">完整示例：智能客服中心</h2>
-    <p class="section-sub"><strong>流程模式示意</strong>——片段演示流程；均假定已按上文创建 <code>JanusClient</code>（含 <code>from janus_broker import AckRequest</code>）并注册了所示 Agent 与邮箱。生产中请把拉取包进 <code>JanusWorker</code> 循环。</p>
+    <p class="section-sub"><strong>流程模式示意</strong>——片段演示流程。前置条件（在<a href="/zh/docs/quickstart.html">快速开始</a>中一次性完成）：导出 <code>JANUS_API_KEY</code>；创建客户端——<code>from janus_broker import AckRequest, JanusClient</code> 后 <code>client = JanusClient("http://localhost:8080", tenant_id="acme", api_key=os.environ["JANUS_API_KEY"])</code>——并注册所示 Agent/邮箱（reviewer/logistics-bot/shipping-bot/return-bot/notify-bot 与各自的 review-mb/logistics-mb/shipping-mb/return-mb/notify-mb 邮箱及能力）。生产中请把拉取包进 <code>JanusWorker</code> 循环。</p>
     <p>本节通过一个真实的多 Agent 协作场景——<strong>处理客户发错货投诉</strong>——展示 Janus 的路由、可靠性和治理功能如何在一个类生产工作流中协同工作。</p>
 
     <h3>你将学到</h3>

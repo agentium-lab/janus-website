@@ -175,19 +175,31 @@ jobs:
         run: |
           pip install janus-broker
           python - &lt;&lt;'EOF'
+          import json
           import os
 
-          from janus_broker import JanusClient, PublishTaskRequest
+          from janus_broker import JanusClient, Payload, PublishTaskRequest, Target, TaskEnvelope
 
           client = JanusClient(os.environ["JANUS_URL"], tenant_id="acme",
                                api_key=os.environ["JANUS_API_KEY"])
           # Tie the task to THIS pull request so concurrent PRs never mix
-          task_id = "review-pr-${{ github.event.pull_request.number }}"
+          task_id = "review-${{ github.event.repository.name }}-pr${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}"
           client.publish_task(PublishTaskRequest(
               id=task_id,
               source_agent="github-actions",
               target_type="mailbox",
               target_value="review-mb",
+              envelope=TaskEnvelope(
+                  task_id=task_id, tenant_id="acme",
+                  source_agent="github-actions",
+                  target=Target(type="mailbox", value="review-mb"),
+                  payload=Payload(type="code_review", content=json.dumps({
+                      "repo": "${{ github.event.repository.full_name }}",
+                      "pr": ${{ github.event.pull_request.number }},
+                      "head_sha": "${{ github.event.pull_request.head.sha }}",
+                      "pr_url": "${{ github.event.pull_request.html_url }}",
+                  })),
+              ),
           ))
           print("published", task_id)
           EOF
@@ -204,12 +216,13 @@ jobs:
 
           client = JanusClient(os.environ["JANUS_URL"], tenant_id="acme",
                                api_key=os.environ["JANUS_API_KEY"])
-          task_id = "review-pr-${{ github.event.pull_request.number }}"
+          task_id = "review-${{ github.event.repository.name }}-pr${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}"
           deadline = time.time() + 600  # total wait budget: 10 minutes
 
           while time.time() &lt; deadline:
               task = client.get_task(task_id)
               if task.status == "completed":
+                  # the task id embeds the head sha: the result belongs to THIS push
                   print("review complete:", task.result_ref)
                   sys.exit(0)
               if task.status in ("failed", "dead_lettered", "cancelled"):

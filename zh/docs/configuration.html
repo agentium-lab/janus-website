@@ -373,9 +373,9 @@
 
     <h4>安装 CLI</h4>
     <p><code>janus</code> CLI 随仓库发布，也在 releases 页提供预构建二进制。自行构建（需 Go 1.25+）：</p>
-    <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">./cli/janus@latest</span>
+    <pre><code><span class="tok-f">go</span><span class="tok-d"> </span><span class="tok-d">install</span><span class="tok-d"> </span><span class="tok-d">./cli</span><span class="tok-d"> </span><span class="tok-c"># 仓库根目录执行；二进制落在 $(go env GOPATH)/bin</span>
 <span class="tok-f">janus</span><span class="tok-d"> </span><span class="tok-d">version</span></code></pre>
-    <p>或从 <a href="https://github.com/agentium-lab/Janus/releases" target="_blank" rel="noopener">releases 页</a>下载预构建二进制并加入 PATH。</p>
+    <p>或从 <a href="https://github.com/agentium-lab/Janus/releases" target="_blank" rel="noopener">releases 页</a>下载预构建二进制并加入 PATH。<br>模块发布后也可远程安装：<code>go install github.com/agentium-lab/Janus/cli@v1.11.0</code>。</p>
 
     <h4>API 密钥</h4>
     <p>当 <code>auth.enabled</code> 开启（默认）时，每个请求都必须通过 <code>X-API-Key</code> 或 <code>Authorization: Bearer &lt;key&gt;</code> 请求头携带有效密钥。密钥绑定单一租户 —— 为租户 A 签发的密钥无法访问租户 B（服务端以 <code>403</code> 拒绝该调用）。</p>

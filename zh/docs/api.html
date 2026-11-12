@@ -172,7 +172,7 @@
         <tr><td>403</td><td>TENANT_MISMATCH</td><td>跨租户访问被拒绝</td></tr>
         <tr><td>403</td><td>POLICY_DENIED</td><td>治理策略阻止了该操作</td></tr>
         <tr><td>404</td><td>NOT_FOUND</td><td>资源不存在</td></tr>
-        <tr><td>409</td><td>LEASE_EXPIRED</td><td>任务租约已过期，需要重新拉取</td></tr>
+        <tr><td>400</td><td>INVALID_ARGUMENT</td><td>租约不匹配或已过期（对服务端已不持有的租约 start/ACK/心跳）——重新拉取任务；投递为至少一次，同一工作可能到达两次</td></tr>
         <tr><td>429</td><td>RATE_LIMITED</td><td>超出预算或并发限制</td></tr>
         <tr><td>500</td><td>INTERNAL</td><td>服务器错误</td></tr>
     </table>
